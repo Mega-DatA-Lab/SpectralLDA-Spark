@@ -100,10 +100,6 @@ class TensorLDATest extends FlatSpec with Matchers {
 
     val alpha: DenseVector[Double] = DenseVector[Double](20.0, 10.0, 5.0)
     val allTokenDistributions: DenseMatrix[Double] = DenseMatrix.rand(100, 3, Uniform(0.0, 1.0))
-    allTokenDistributions(0 until 10, 0) += 3.0
-    allTokenDistributions(10 until 20, 1) += 3.0
-    allTokenDistributions(20 until 30, 2) += 3.0
-
 
     val s = sum(allTokenDistributions(::, *))
     val normalisedAllTokenDistributions: DenseMatrix[Double] =

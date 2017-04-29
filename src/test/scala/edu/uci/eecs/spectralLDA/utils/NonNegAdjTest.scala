@@ -27,7 +27,7 @@ class NonNegAdjTest extends FlatSpec with Matchers {
     )
 
     for ((v1, v2) <- inputVectors.zip(expectedAdjustedVectors)) {
-      norm(NonNegativeAdjustment.simplexProj(v1)._1 - v2) should be <= 1e-8
+      norm(NonNegativeAdjustment.simplexProj(v1) - v2) should be <= 1e-8
     }
   }
 }

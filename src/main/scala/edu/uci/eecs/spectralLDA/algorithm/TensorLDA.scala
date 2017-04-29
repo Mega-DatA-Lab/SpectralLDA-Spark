@@ -6,7 +6,7 @@ package edu.uci.eecs.spectralLDA.algorithm
  * Created by Furong Huang on 11/2/15.
  */
 import edu.uci.eecs.spectralLDA.datamoments.DataCumulant
-import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, argsort, diag, max, min}
+import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, argsort, diag, max, min, norm}
 import breeze.numerics._
 import breeze.stats.distributions.{Rand, RandBasis}
 import edu.uci.eecs.spectralLDA.utils.NonNegativeAdjustment
@@ -60,7 +60,10 @@ class TensorLDA(dimK: Int,
       tol = tol
     )
 
-    val (nu: DenseMatrix[Double], _, _, lambda: DenseVector[Double]) = myALS.run
+    val (nu1: DenseMatrix[Double], nu2: DenseMatrix[Double], nu3: DenseMatrix[Double],
+      lambda: DenseVector[Double]) = myALS.run
+
+    val nu = uniqueFactor(nu1, nu2, nu3)
 
     // unwhiten the results
     // unwhitening matrix: $(W^T)^{-1}=U\Sigma^{1/2}$
@@ -91,4 +94,17 @@ class TensorLDA(dimK: Int,
       cumulant.eigenVectorsM2, cumulant.eigenValuesM2, cumulant.firstOrderMoments)
   }
 
+  private def uniqueFactor(nu1: DenseMatrix[Double],
+                           nu2: DenseMatrix[Double],
+                           nu3: DenseMatrix[Double],
+                           eps: Double = 1e-6): DenseMatrix[Double] = {
+    val nu = nu1.copy
+    for (j <- 0 until nu1.cols) {
+      if (norm(nu1(::, j) - nu2(::, j)) < eps)
+        nu(::, j) := nu3(::, j)
+      else if (norm(nu1(::, j) - nu3(::, j)) < eps)
+        nu(::, j) := nu2(::, j)
+    }
+    nu
+  }
 }

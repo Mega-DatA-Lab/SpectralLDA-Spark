@@ -9,13 +9,6 @@ import scala.language.postfixOps
 object NonNegativeAdjustment {
   /** Projection of one eigenvector matrix from the CP decomposition into l1-simplex
     *
-    * Given an eigenvector w, we have to decide whether to return proj(w) or proj(-w) as
-    * the result.
-    *
-    * We notice that the Duchi algorithm produces the same result for any w with a
-    * parallel shift. We thus compute proj(w - min(w)) and proj((-w) - min(-w)) and compare
-    * the shift "theta" from the Duchi algorithm. We retain the one with smaller shift "theta".
-    *
     * Ref:
     * Duchi, John, Efficient Projections onto the l1-Ball for Learning in High Dimensions, 2008
     *
@@ -25,16 +18,8 @@ object NonNegativeAdjustment {
   def simplexProj_Matrix(M :DenseMatrix[Double]): DenseMatrix[Double] ={
     val M_onSimplex = DenseMatrix.zeros[Double](M.rows, M.cols)
 
-    for(i <- 0 until M.cols optimized){
-      val (projectedVector, theta) = simplexProj(M(::, i) - min(M(::, i)))
-      val (projectedVectorReversedSign, thetaReversedSign) = simplexProj(- M(::, i) - min(- M(::, i)))
-
-      if (theta < thetaReversedSign) {
-        M_onSimplex(::, i) := projectedVector
-      }
-      else {
-        M_onSimplex(::, i) := projectedVectorReversedSign
-      }
+    for (i <- 0 until M.cols optimized) {
+      M_onSimplex(::, i) := simplexProj(M(::, i))
     }
 
     M_onSimplex
@@ -49,9 +34,9 @@ object NonNegativeAdjustment {
     * Duchi, John, Efficient Projections onto the l1-Ball for Learning in High Dimensions, 2008
     *
     * @param V  The input vector
-    * @return   Projected vector and the shift
+    * @return   Projected vector
     */
-  def simplexProj(V: DenseVector[Double]): (DenseVector[Double], Double) = {
+  def simplexProj(V: DenseVector[Double]): DenseVector[Double] = {
     // val z:Double = 1.0
     val len: Int = V.length
     val U: DenseVector[Double] = DenseVector(V.copy.toArray.sortWith(_ > _))
@@ -71,6 +56,6 @@ object NonNegativeAdjustment {
     }
     val theta: Double = InterVec(maxIndex)
     val P_norm: DenseVector[Double] = max(V - theta, 0.0)
-    (P_norm, theta)
+    P_norm
   }
 }
