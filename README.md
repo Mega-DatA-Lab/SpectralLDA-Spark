@@ -43,9 +43,10 @@ We use the `sbt` build system. By default we support Scala 2.11.8 and Spark 2.0.
 3. An example call from command line is
 
     ```bash
-    spark-submit --packages com.github.scopt:scopt_2.11:3.5.0 \
+    spark-submit \
+    --packages com.github.scopt:scopt_2.11:3.5.0,org.apache.hadoop:hadoop-aws:2.7.3 \
     --class edu.uci.eecs.spectralLDA.SpectralLDA \
-    target/scala-2.11/spectrallda-tensor_2.11-1.0.jar \
+    target/scala-2.11/spectrallda-tensor_2.11-1.1.jar \
     -k 5 --alpha0 5.0 --input-type libsvm -o results \
     src/main/resources/Data/datasets/synthetic/samples_train_libsvm.txt
     ```
