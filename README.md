@@ -111,29 +111,6 @@ val als = new ALS(
 val (beta: DenseMatrix[Double], _, _, alpha: DenseVector[Double]) = als.run
 ```
 
-### Set up Spark 2.0.0 to use system native BLAS/LAPACK
-
-1. In order for Spark to use system native BLAS/LAPACK, first compile Spark 2.0.0 with the option `-Pnetlib-lgpl` to include all the artifacts of `netlib4java`, following the advice [here](http://apache-spark-user-list.1001560.n3.nabble.com/Mllib-native-netlib-java-OpenBLAS-td19662.html).
-
-    ```bash
-    mvn -Pyarn -Phadoop-2.7 -Pnetlib-lgpl -DskipTests clean package
-    ```
-
-    `netlib4java` includes the JNI routines to load up the system native BLAS/LAPACK libraries. 
-
-2. Now we're going to make the system native BLAS/LAPACK libraries available to `netlib4java`. On Mac, `netlib4java` will automatically find `veclib`; on Linux, we could use ATLAS.
-
-3. Lastly set up symbollic links for the `libblas.so.3` and `liblapack.so.3` that `netlib4java` looks for. 
-
-    ```bash
-    sudo alternatives --install /usr/lib64/libblas.so libblas.so /usr/lib64/atlas/libtatlas.so.3 1000
-    sudo alternatives --install /usr/lib64/libblas.so.3 libblas.so.3 /usr/lib64/atlas/libtatlas.so.3 1000
-    sudo alternatives --install /usr/lib64/liblapack.so liblapack.so /usr/lib64/atlas/libtatlas.so.3 1000
-    sudo alternatives --install /usr/lib64/liblapack.so.3 liblapack.so.3 /usr/lib64/atlas/libtatlas.so.3 1000
-    ```
-
-Now if we run the above experiments again, any "WARN BLAS" or "WARN LAPACK" messages should have disappeared.
-
 ### I have millions of small text files...
 If we open them simply via `sc.wholeTextFiles()` the system will spend forever long time querying the file system for the list of all the file names. The solution is to first combine them in Hadoop SequenceFiles of `RDD[(String, String)]`, then process them into word count vectors and vocabulary array.
 
