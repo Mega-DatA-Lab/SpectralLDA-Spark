@@ -56,7 +56,6 @@ object DataCumulant {
   def getDataCumulant(dimK: Int,
                       alpha0: Double,
                       documents: RDD[(Long, SparseVector[Double])],
-                      m2ConditionNumberUB: Double = Double.PositiveInfinity,
                       randomisedSVD: Boolean = true,
                       numIterationsKrylovMethod: Int = 1)
                      (implicit randBasis: RandBasis = Rand)
@@ -122,13 +121,6 @@ object DataCumulant {
         (u(::, i.slice(dimVocab - dimK, dimVocab)).copy, sigma(i.slice(dimVocab - dimK, dimVocab)).copy)
       }
     println("Finished calculating second order moments and whitening matrix.")
-
-    val m2ConditionNumber: Double = max(eigenValues) / min(eigenValues)
-    if (m2ConditionNumber > m2ConditionNumberUB) {
-      println(s"ERROR: Shifted M2 top $dimK eigenvalues: $eigenValues")
-      println(s"ERROR: Shifted M2 condition number: $m2ConditionNumber > UB $m2ConditionNumberUB")
-      sys.exit(2)
-    }
 
     println("Start whitening data with dimensionality reduction...")
     val W: DenseMatrix[Double] = eigenVectors * diag(eigenValues map { x => 1 / (sqrt(x) + 1e-9) })

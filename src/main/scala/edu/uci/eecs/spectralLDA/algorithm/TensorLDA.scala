@@ -6,7 +6,7 @@ package edu.uci.eecs.spectralLDA.algorithm
  * Created by Furong Huang on 11/2/15.
  */
 import edu.uci.eecs.spectralLDA.datamoments.DataCumulant
-import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, argsort, diag, max, min, norm}
+import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, argsort, diag, norm}
 import breeze.numerics._
 import breeze.stats.distributions.{Rand, RandBasis}
 import edu.uci.eecs.spectralLDA.utils.NonNegativeAdjustment
@@ -47,7 +47,6 @@ class TensorLDA(dimK: Int,
       dimK,
       alpha0,
       documents,
-      m2ConditionNumberUB = m2ConditionNumberUB,
       randomisedSVD = randomisedSVD,
       numIterationsKrylovMethod = numIterationsKrylovMethod
     )
@@ -75,19 +74,6 @@ class TensorLDA(dimK: Int,
     val idx = argsort(alphaUnordered).reverse.take(dimK)
     val alpha = alphaUnordered(idx).toDenseVector
     val topicWordMatrix = topicWordMatrixUnordered(::, idx).toDenseMatrix
-
-    // Diagnostic information: the ratio of the maximum to the minimum of the
-    // top k eigenvalues of shifted M2
-    //
-    // If it's too large (>10), the algorithm may not be able to output reasonable results.
-    // It could be due to some very frequent (low IDF) words or that we specified dimK
-    // larger than the rank of the shifted M2.
-    val m2ConditionNumber = max(cumulant.eigenValuesM2) / min(cumulant.eigenValuesM2)
-    println(s"Shifted M2 top $dimK eigenvalues: ${cumulant.eigenValuesM2}")
-    println(s"Shifted M2 condition number: $m2ConditionNumber")
-    println("If the condition number is too large (e.g. >10), the algorithm may not be able to " +
-      "output reasonable results. It could be due to the existence of very frequent words " +
-      "across the documents or that the specified k is larger than the true number of topics.")
 
     (NonNegativeAdjustment.simplexProj_Matrix(topicWordMatrix), alpha,
       cumulant.eigenVectorsM2, cumulant.eigenValuesM2, cumulant.firstOrderMoments)
