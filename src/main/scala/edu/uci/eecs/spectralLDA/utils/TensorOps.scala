@@ -10,12 +10,12 @@ import scala.reflect.ClassTag
 object TensorOps {
   /** Complex matrix norm */
   def matrixNorm(m: DenseMatrix[Complex]): Double = {
-    norm(norm(m(::, *)).toDenseVector)
+    norm(norm(m(::, *)).t.toDenseVector)
   }
 
   /** Double matrix norm */
   def dmatrixNorm(m: DenseMatrix[Double]): Double = {
-    norm(norm(m(::, *)).toDenseVector)
+    norm(norm(m(::, *)).t.toDenseVector)
   }
 
   /** Unfold 3rd-order tensor */

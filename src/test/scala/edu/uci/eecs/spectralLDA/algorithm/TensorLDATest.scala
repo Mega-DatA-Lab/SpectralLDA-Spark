@@ -66,7 +66,7 @@ class TensorLDATest extends FlatSpec with Matchers {
 
     // Rearrange the elements/columns of fitted_alpha and fitted_beta
     // to the order of initial alpha and beta
-    val idx = argtopk(fitted_alpha, 3)
+    val idx = argsort(fitted_alpha).reverse.take(3)
     val sorted_beta = fitted_beta(::, idx).toDenseMatrix
     // if one vector is all negative, multiply it by -1 to turn it positive
     for (j <- 0 until sorted_beta.cols) {
@@ -79,7 +79,7 @@ class TensorLDATest extends FlatSpec with Matchers {
     val diff_beta: DenseMatrix[Double] = sorted_beta - allTokenDistributions
     val diff_alpha: DenseVector[Double] = sorted_alpha - alpha
 
-    val norm_diff_beta = norm(norm(diff_beta(::, *)).toDenseVector)
+    val norm_diff_beta = norm(norm(diff_beta(::, *)).t.toDenseVector)
     val norm_diff_alpha = norm(diff_alpha)
 
     info(s"Expecting alpha: $alpha")
@@ -107,7 +107,7 @@ class TensorLDATest extends FlatSpec with Matchers {
 
     val s = sum(allTokenDistributions(::, *))
     val normalisedAllTokenDistributions: DenseMatrix[Double] =
-      allTokenDistributions * diag(1.0 / s.toDenseVector)
+      allTokenDistributions * diag(1.0 / s.t.toDenseVector)
 
     val documents = simulateLDAData(
       alpha,
@@ -130,7 +130,7 @@ class TensorLDATest extends FlatSpec with Matchers {
 
     // Rearrange the elements/columns of fitted_alpha and fitted_beta
     // to the order of initial alpha and beta
-    val idx = argtopk(fitted_alpha, dimK)
+    val idx = argsort(fitted_alpha).reverse.take(dimK)
     val sorted_beta = fitted_beta(::, idx).toDenseMatrix
     val sorted_alpha = fitted_alpha(idx).toDenseVector
 
@@ -140,7 +140,7 @@ class TensorLDATest extends FlatSpec with Matchers {
     val diff_beta: DenseMatrix[Double] = sorted_beta - expected_beta
     val diff_alpha: DenseVector[Double] = sorted_alpha - expected_alpha
 
-    val norm_diff_beta = norm(norm(diff_beta(::, *)).toDenseVector)
+    val norm_diff_beta = norm(norm(diff_beta(::, *)).t.toDenseVector)
     val norm_diff_alpha = norm(diff_alpha)
 
     info(s"Expecting alpha: $expected_alpha")

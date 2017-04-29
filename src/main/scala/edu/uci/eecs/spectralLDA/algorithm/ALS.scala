@@ -120,7 +120,7 @@ class ALS(dimK: Int,
                                  B: DenseMatrix[Double],
                                  C: DenseMatrix[Double]): (DenseMatrix[Double], DenseVector[Double]) = {
     val updatedA = unfoldedM3 * TensorOps.krprod(C, B) * TensorOps.to_invert(C, B)
-    val lambda = norm(updatedA(::, *)).toDenseVector
+    val lambda = norm(updatedA(::, *)).t.toDenseVector
     (AlgebraUtil.matrixNormalization(updatedA), lambda)
   }
 }

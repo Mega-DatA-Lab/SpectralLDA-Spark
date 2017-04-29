@@ -43,14 +43,7 @@ libraryDependencies ++= Seq(
 )
 
 
-//{
-//  val defaultHadoopVersion = "[2.6.0,)"
-//  val hadoopVersion =
-//    scala.util.Properties.envOrElse("SPARK_HADOOP_VERSION", defaultHadoopVersion)
-//  libraryDependencies += "org.apache.hadoop" % "hadoop-client" % hadoopVersion
-//}
-
-mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+assemblyMergeStrategy in assembly ~= (old =>
   {
     case PathList("javax", "servlet", xs @ _*)               => MergeStrategy.first
     case PathList(ps @ _*) if ps.last endsWith ".html"       => MergeStrategy.first
@@ -62,12 +55,12 @@ mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
     case m if m.toLowerCase.startsWith("meta-inf/services/") => MergeStrategy.filterDistinctLines
     case _ => MergeStrategy.first
   }
-}
+)
 
 
 spName := "FurongHuang/spectrallda-tensorspark"
 
-sparkVersion := "2.0.2"
+sparkVersion := "2.1.0"
 
 sparkComponents += "mllib"
 

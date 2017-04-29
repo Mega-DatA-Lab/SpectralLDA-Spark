@@ -6,7 +6,7 @@ package edu.uci.eecs.spectralLDA.algorithm
  * Created by Furong Huang on 11/2/15.
  */
 import edu.uci.eecs.spectralLDA.datamoments.DataCumulant
-import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, argtopk, diag, max, min}
+import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, argsort, diag, max, min}
 import breeze.numerics._
 import breeze.stats.distributions.{Rand, RandBasis}
 import edu.uci.eecs.spectralLDA.utils.NonNegativeAdjustment
@@ -70,7 +70,7 @@ class TensorLDA(dimK: Int,
     val topicWordMatrixUnordered: DenseMatrix[Double] = unwhiteningMatrix * nu * diag(lambda)
 
     // re-arrange alpha and topicWordMatrix in descending order of alpha
-    val idx = argtopk(alphaUnordered, dimK)
+    val idx = argsort(alphaUnordered).reverse.take(dimK)
     val alpha = alphaUnordered(idx).toDenseVector
     val topicWordMatrix = topicWordMatrixUnordered(::, idx).toDenseMatrix
 

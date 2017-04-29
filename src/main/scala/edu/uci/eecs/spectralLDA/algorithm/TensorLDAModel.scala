@@ -106,7 +106,8 @@ class TensorLDAModel(val topicWordDistribution: DenseMatrix[Double],
     val smoothedBeta: DenseMatrix[Double] = topicWordDistribution * (1 - smoothing)
     smoothedBeta += DenseMatrix.ones[Double](vocabSize, k) * (smoothing / vocabSize)
 
-    assert(sum(smoothedBeta(::, *)).toDenseVector.forall(a => abs(a - 1) <= 1e-10))
+    assert(sum(smoothedBeta(::, *)).t.toDenseVector
+      .forall(a => abs(a - 1) <= 1e-10))
     assert(smoothing < 1e-4 || smoothedBeta.forall(_ > 1e-10))
 
     smoothedBeta

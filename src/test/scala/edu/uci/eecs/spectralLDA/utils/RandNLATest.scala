@@ -45,7 +45,7 @@ class RandNLATest extends FlatSpec with Matchers {
     val expectedResult = m2 * g
 
     val diff: DenseMatrix[Double] = result - expectedResult
-    val normDiff: Double = norm(norm(diff(::, *)).toDenseVector)
+    val normDiff: Double = norm(norm(diff(::, *)).t.toDenseVector)
     normDiff should be <= 1e-8
   }
 
@@ -59,7 +59,7 @@ class RandNLATest extends FlatSpec with Matchers {
     val alpha: DenseVector[Double] = DenseVector[Double](25.0, 20.0, 15.0, 10.0, 5.0)
     val beta: DenseMatrix[Double] = DenseMatrix.rand(n, k, Uniform(0.0, 1.0))
 
-    val norms = norm(beta(::, *)).toDenseVector
+    val norms = norm(beta(::, *)).t.toDenseVector
     for (j <- 0 until k) {
       beta(::, j) /= norms(j)
     }
@@ -72,7 +72,7 @@ class RandNLATest extends FlatSpec with Matchers {
     val (s: DenseVector[Double], u: DenseMatrix[Double]) = RandNLA.decomp2(a * q, q)
 
     val diff_a = u * diag(s) * u.t - a
-    val norm_diff_a = norm(norm(diff_a(::, *)).toDenseVector)
+    val norm_diff_a = norm(norm(diff_a(::, *)).t.toDenseVector)
 
     norm_diff_a should be <= 1e-8
   }

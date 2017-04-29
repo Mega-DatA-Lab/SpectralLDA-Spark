@@ -42,6 +42,6 @@ class TensorOpsTest extends FlatSpec with Matchers {
     val expected = expectedRankOneTensor3d(x, y, z)
 
     val diff = tensor - expected
-    norm(norm(diff(::, *)).toDenseVector) should be <= 1e-8
+    norm(norm(diff(::, *)).t.toDenseVector) should be <= 1e-8
   }
 }
