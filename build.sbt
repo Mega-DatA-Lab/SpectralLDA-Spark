@@ -1,6 +1,6 @@
 name := "SpectralLDA-Tensor"
 
-version := "1.0"
+version := "1.1"
 
 scalaVersion := "2.11.8"
 crossScalaVersions := Seq("2.10.6", "2.11.8")
