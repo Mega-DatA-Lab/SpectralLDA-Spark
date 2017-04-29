@@ -26,7 +26,7 @@ class TensorLDA(dimK: Int,
                 maxIterations: Int = 500,
                 tol: Double = 1e-6,
                 randomisedSVD: Boolean = true,
-                numIterationsKrylovMethod: Int = 1) extends Serializable {
+                numIterationsKrylovMethod: Int = 2) extends Serializable {
   assert(dimK > 0, "The number of topics dimK must be positive.")
   assert(alpha0 > 0, "The topic concentration alpha0 must be positive.")
   assert(maxIterations > 0, "The number of iterations for ALS must be positive.")

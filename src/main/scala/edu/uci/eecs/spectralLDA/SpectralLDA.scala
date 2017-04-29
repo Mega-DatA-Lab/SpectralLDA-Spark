@@ -26,7 +26,6 @@ object SpectralLDA {
                              inputType: String = "obj", // "libsvm", "text" or "obj"
                              k: Int = 1,
                              topicConcentration: Double = 5.0,
-                             numIterationsKrylovMethod: Int = 1,
                              maxIterations: Int = 500,
                              tolerance: Double = 1e-6,
                              vocabSize: Int = -1,
@@ -55,13 +54,6 @@ object SpectralLDA {
           else failure("topicConcentration must be positive.")
         )
 
-      opt[Int]("q")
-        .text(s"number of iterations q for RandSVD of M2. default: ${defaultParams.numIterationsKrylovMethod}")
-        .action((x, c) => c.copy(numIterationsKrylovMethod = x))
-        .validate(x =>
-          if (x >= 0) success
-          else failure("number of iterations q for RandSVD of M2 must be non-negative.")
-        )
       opt[Int]("max-iter")
         .text(s"number of iterations of ALS. default: ${defaultParams.maxIterations}")
         .action((x, c) => c.copy(maxIterations = x))
@@ -154,8 +146,7 @@ object SpectralLDA {
       params.k,
       params.topicConcentration,
       maxIterations = params.maxIterations,
-      tol = params.tolerance,
-      numIterationsKrylovMethod = params.numIterationsKrylovMethod
+      tol = params.tolerance
     )
     val (beta, alpha, _, _, _) = lda.fit(documents)
     println("Finished ALS algorithm for tensor decomposition.")

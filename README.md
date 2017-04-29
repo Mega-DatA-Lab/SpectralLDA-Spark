@@ -24,7 +24,6 @@ We use the `sbt` build system. By default we support Scala 2.11.8 and Spark 2.0.
     
       -k, --k <value>          number of topics
       --alpha0 <value>         sum of the topic distribution prior parameter
-      --q <value>              number of iterations q for RandSVD of M2. default: 1
       --max-iter <value>       number of iterations of learning. default: 500
       --tol <value>            tolerance for the ALS algorithm. default: 1.0E-6
       --input-type <value>     type of input files: "obj", "libsvm" or "text". "obj" for Hadoop SequenceFile of RDD[(Long, SparseVector[Double])]. default: obj
