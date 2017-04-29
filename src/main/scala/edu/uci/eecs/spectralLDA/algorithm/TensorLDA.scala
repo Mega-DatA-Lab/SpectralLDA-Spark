@@ -47,7 +47,6 @@ class TensorLDA(dimK: Int,
       dimK,
       alpha0,
       documents,
-      idfLowerBound = idfLowerBound,
       m2ConditionNumberUB = m2ConditionNumberUB,
       randomisedSVD = randomisedSVD,
       numIterationsKrylovMethod = numIterationsKrylovMethod

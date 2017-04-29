@@ -56,7 +56,6 @@ object DataCumulant {
   def getDataCumulant(dimK: Int,
                       alpha0: Double,
                       documents: RDD[(Long, SparseVector[Double])],
-                      idfLowerBound: Double = 1.0,
                       m2ConditionNumberUB: Double = Double.PositiveInfinity,
                       randomisedSVD: Boolean = true,
                       numIterationsKrylovMethod: Int = 1)
@@ -66,9 +65,6 @@ object DataCumulant {
     assert(alpha0 > 0, "The topic concentration alpha0 must be positive.")
 
     val sc: SparkContext = documents.sparkContext
-
-    val idf: DenseVector[Double] = TextProcessor.inverseDocumentFrequency(documents)
-    val termsLowIDF: Seq[Int] = idf.findAll(_ <= idfLowerBound - 1e-12)
 
     val validDocuments = documents
       .map {
@@ -97,7 +93,6 @@ object DataCumulant {
     val firstOrderMoments = new SparseVector[Double](m1Index, m1Value, dimVocab).toDenseVector
 
     // Zero out the terms with low IDF
-    firstOrderMoments(termsLowIDF) := 0.0
     println("Finished calculating first order moments.")
 
     println("Start calculating second order moments...")
@@ -110,7 +105,6 @@ object DataCumulant {
           numDocs,
           firstOrderMoments,
           validDocuments,
-          termsLowIDF,
           nIter = numIterationsKrylovMethod
         )
       }
@@ -122,8 +116,6 @@ object DataCumulant {
           .reduce(_ + _)
           .map(_ / numDocs.toDouble).toDenseMatrix
         val M2: DenseMatrix[Double] = E_x1_x2 - alpha0 / (alpha0 + 1) * (firstOrderMoments * firstOrderMoments.t)
-        M2(termsLowIDF, ::) := 0.0
-        M2(::, termsLowIDF) := 0.0
 
         val eigSym.EigSym(sigma, u) = eigSym(alpha0 * (alpha0 + 1) * M2)
         val i = argsort(sigma)

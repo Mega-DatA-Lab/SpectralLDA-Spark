@@ -40,7 +40,6 @@ object RandNLA {
               numDocs: Long,
               firstOrderMoments: DenseVector[Double],
               documents: RDD[(Long, Double, SparseVector[Double])],
-              termsLowIDF: Seq[Int] = Seq[Int](),
               nIter: Int = 1)
             (implicit randBasis: RandBasis = Rand)
   : (DenseMatrix[Double], DenseVector[Double]) = {
@@ -61,8 +60,7 @@ object RandNLA {
         numDocs,
         firstOrderMoments,
         documents,
-        q,
-        termsLowIDF
+        q
       )
       val QR(nextq, _) = qr.reduced(m2q)
       q = nextq
@@ -76,8 +74,7 @@ object RandNLA {
       numDocs,
       firstOrderMoments,
       documents,
-      q,
-      termsLowIDF
+      q
     )
 
     // Randomised eigendecomposition of M2
@@ -126,14 +123,9 @@ object RandNLA {
                                      numDocs: Long,
                                      firstOrderMoments: DenseVector[Double],
                                      documents: RDD[(Long, Double, SparseVector[Double])],
-                                     q: DenseMatrix[Double],
-                                     termsLowIDF: Seq[Int] = Seq[Int]()
-                                    ): DenseMatrix[Double] = {
+                                     q: DenseMatrix[Double]): DenseMatrix[Double] = {
     val para_main: Double = (alpha0 + 1.0) * alpha0
     val para_shift: Double = alpha0 * alpha0
-
-    firstOrderMoments(termsLowIDF) := 0.0
-    q(termsLowIDF, ::) := 0.0
 
     val qBroadcast = documents.sparkContext.broadcast[DenseMatrix[Double]](q)
 
@@ -150,7 +142,6 @@ object RandNLA {
         case (token, v) => unshiftedM2(token, ::) := v.t
       }
     unshiftedM2 /= numDocs.toDouble
-    unshiftedM2(termsLowIDF, ::) := 0.0
 
     qBroadcast.unpersist
 
