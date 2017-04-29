@@ -10,8 +10,9 @@ import edu.uci.eecs.spectralLDA.utils.{AlgebraUtil, TensorOps}
 import breeze.linalg.{*, DenseMatrix, DenseVector, diag, max, min, norm, svd}
 import breeze.stats.distributions.{Gaussian, Rand, RandBasis}
 
-/** CANDECOMP/PARAFAC decomposition via Alternating Least Square (ALS)
+/** CANDECOMP/PARAFAC Decomposition via Alternating Least Square (ALS)
   *
+  * The current implementation only works for symmetric 3D tensors.
   *
   * @param dimK               tensor T is of shape dimK-by-dimK-by-dimK
   * @param tensor3D           dimK-by-(dimK*dimK) matrix for the unfolded M3
@@ -34,8 +35,6 @@ class ALS(dimK: Int,
   assert(restarts > 0, "Number of restarts for ALS must be positive.")
 
   /** Run Alternating Least Squares (ALS)
-    *
-    * Compute the best approximating rank-$k$ tensor $\sum_{i=1}^k\alpha_i\beta_i^{\otimes 3}$
     *
     * @param randBasis   default random seed
     * @return            three dimK-by-dimK matrices with all the $beta_i$ as columns,
