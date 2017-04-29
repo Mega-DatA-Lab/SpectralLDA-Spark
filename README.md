@@ -102,39 +102,6 @@ val als = new ALS(
 // alpha is the eigenvalue vector
 val (beta1, beta2, beta3, alpha: DenseVector[Double]) = als.run
 ```
-
-### I have millions of small text files...
-If we open them simply via `sc.wholeTextFiles()` the system will spend forever long time querying the file system for the list of all the file names. The solution is to first combine them in Hadoop SequenceFiles of `RDD[(String, String)]`, then process them into word count vectors and vocabulary array.
-
-1. We provided `edu.uci.eecs.spectralLDA.textprocessing.CombineSmallTextFiles` to squash many text files into a Hadoop SequenceFile. As an example, if all the Wikipedia articles are extracted under `wikitext/0` to `wikitext/9999`, with thousands of text files under each subdirectory, we could batch combining them into a series of SequenceFiles.
-
-    ```bash
-    # Under wikitext/, first list all the subdirectory names,
-    # then call xargs to feed, say 50 subdirectories each time to CombineSmallTextFiles
-    find . -mindepth 1 -maxdepth 1 | xargs -n 50 \
-    spark-submit --class edu.uci.eecs.spectralLDA.textprocessing.CombineSmallTextFiles \
-    target/scala-2.11/spectrallda-tensor_2.11-1.0.jar
-    ```
-    
-    When the loop finishes, we'd find a number of `*.obj` Hadoop SequenceFiles under `wikitext/`.
-    
-2. Launch `spark-shell` with the proper server and memory settings, and the option `--jars target/scala-2.11/spectrallda-tensor_2.11-1.0.jar`. 
-
-   We process the SequenceFiles into word count vectors `RDD[(Long, SparseVector[Double])]` and dictionary array, and save them. 
-
-    ```scala
-    import org.apache.spark.rdd.RDD
-    import edu.uci.eecs.spectralLDA.textprocessing.TextProcessor
-    val (docs, dictionary) = TextProcessor.processDocumentsRDD(
-      sc.objectFile[(String, String)]("wikitext/*.obj"),
-      stopwordFile = "src/main/resources/Data/datasets/StopWords_common.txt",
-      vocabSize = <vocabSize>
-    )
-    docs.saveAsObjectFile("docs.obj")
-    ```
-    
-    The output file `docs.obj` contains serialised `RDD[(Long, SparseVector[Double])]`. When we run `SpectralLDA` later on, we could specify the input file `docs.obj` and the file type as `obj`.
-
     
 ## References
 * White Paper: http://newport.eecs.uci.edu/anandkumar/pubs/whitepaper.pdf
