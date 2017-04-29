@@ -24,11 +24,7 @@ We use the `sbt` build system. By default we support Scala 2.11.8 and Spark 2.0.
     
       -k, --k <value>          number of topics
       --alpha0 <value>         sum of the topic distribution prior parameter
-      --min-words <value>      minimum count of words for every document. default: 0
-      --idf-lb <value>         only work on terms with IDF above the lower bound. default: 1.0
       --q <value>              number of iterations q for RandSVD of M2. default: 1
-      --M2-cond-num-ub <value>
-                               stop if the M2 condition number is higher than the given bound. default: 1000.0
       --max-iter <value>       number of iterations of learning. default: 500
       --tol <value>            tolerance for the ALS algorithm. default: 1.0E-6
       --input-type <value>     type of input files: "obj", "libsvm" or "text". "obj" for Hadoop SequenceFile of RDD[(Long, SparseVector[Double])]. default: obj
@@ -41,8 +37,6 @@ We use the `sbt` build system. By default we support Scala 2.11.8 and Spark 2.0.
     Only `k`, `alpha0` and the input file paths are required parameters.
     
     The higher `alpha0` is relative to `k` the more likely are we to recover only topic-specific words (vs "common" words that would exist in every topic distribution). If `alpha0 = k` we would allow a non-informative prior for the topic distribution, when every `alpha_i = 1.0`.
-    
-    `M2-cond-num-ub` checks the condition number (the ratio of the maximum eigenvalue to the minimum one) of the M2 moments matrix and stops if it's above the given bound. It allows to quickly check if there's any predominant topic in the input.
     
     `input-file` could be "text", "libsvm", or "obj": "text" for plain text files, "libsvm" for text files in LIBSVM format, "obj" for Hadoop SequenceFiles storing serialised `RDD[(Long, SparseVector[Double])]`. It is "obj" by default.
     
@@ -70,8 +64,6 @@ val lda = new TensorLDA(
   alpha0 = params.topicConcentration,
   maxIterations = value,            // optional, default: 500
   tol = value,                      // optional, default: 1e-6
-  idfLowerBound = value,            // optional, default: 1.0
-  m2ConditionNumberUB = value,      // optional, default: infinity
   randomisedSVD = true,             // optional, default: true
   numIterationsKrylovMethod = value // optional, default: 1
 )
@@ -98,7 +90,7 @@ import breeze.linalg._
 
 val als = new ALS(
   dimK = value,
-  thirdOrderMoments = value,        // k-by-(k*k) matrix for the unfolded 3rd-order symmetric tensor
+  tensor3D = value,        // k-by-(k*k) matrix for the unfolded 3rd-order symmetric tensor
   maxIterations = value,            // optional, default: 500
   tol = value,                      // optional, default: 1e-6
 )
@@ -106,9 +98,9 @@ val als = new ALS(
 // We run ALS to find the best approximating sum of rank-1 tensors such that 
 // $$ M3 = \sum_{i=1}^k\alpha_i\beta_i^{\otimes 3} $$
 
-// beta is the k-by-k matrix with $\beta_i$ as columns
-// alpha is the vector for $(\alpha_1,\ldots,\alpha_k)$
-val (beta: DenseMatrix[Double], _, _, alpha: DenseVector[Double]) = als.run
+// beta are the factor matrices
+// alpha is the eigenvalue vector
+val (beta1, beta2, beta3, alpha: DenseVector[Double]) = als.run
 ```
 
 ### I have millions of small text files...
