@@ -19,18 +19,12 @@ import org.apache.spark.rdd.RDD
   * @param alpha0               sum of alpha for the Dirichlet prior for topic distribution
   * @param maxIterations        max number of iterations for the ALS algorithm for CP decomposition
   * @param tol                  tolerance. the dot product threshold in ALS is 1-tol
-  * @param idfLowerBound        lower bound of Inverse Document Frequency (IDF) for the words to be taken into account
-  * @param m2ConditionNumberUB  upper bound of Condition Number for the shifted M2 matrix, if the empirical
-  *                             Condition Number exceeds the uppper bound the code quits with error before computing
-  *                             the M3. It allows to quickly check if there're any predominant topics
   * @param randomisedSVD        uses randomised SVD on M2, true by default
   */
 class TensorLDA(dimK: Int,
                 alpha0: Double,
                 maxIterations: Int = 500,
                 tol: Double = 1e-6,
-                idfLowerBound: Double = 1.0,
-                m2ConditionNumberUB: Double = Double.PositiveInfinity,
                 randomisedSVD: Boolean = true,
                 numIterationsKrylovMethod: Int = 1) extends Serializable {
   assert(dimK > 0, "The number of topics dimK must be positive.")

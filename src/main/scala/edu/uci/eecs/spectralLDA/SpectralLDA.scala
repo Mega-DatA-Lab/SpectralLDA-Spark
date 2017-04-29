@@ -27,9 +27,7 @@ object SpectralLDA {
                              k: Int = 1,
                              topicConcentration: Double = 5.0,
                              minWordsPerDocument: Int = 0,
-                             idfLowerBound: Double = 1.0,
                              numIterationsKrylovMethod: Int = 1,
-                             m2ConditionNumberUB: Double = 1000.0,
                              maxIterations: Int = 500,
                              tolerance: Double = 1e-6,
                              vocabSize: Int = -1,
@@ -61,14 +59,6 @@ object SpectralLDA {
       opt[Int]("min-words")
         .text(s"minimum count of words for every document. default: ${defaultParams.minWordsPerDocument}")
         .action((x, c) => c.copy(minWordsPerDocument = x))
-      opt[Double]("idf-lb")
-        .text(s"lower bound of the IDF. default: ${defaultParams.idfLowerBound}")
-        .action((x, c) => c.copy(idfLowerBound = x))
-        .validate(x =>
-          if (x >= 1.0) success
-          else failure("idfLowerBound must be at least 1.0.")
-        )
-
       opt[Int]("q")
         .text(s"number of iterations q for RandSVD of M2. default: ${defaultParams.numIterationsKrylovMethod}")
         .action((x, c) => c.copy(numIterationsKrylovMethod = x))
@@ -76,15 +66,6 @@ object SpectralLDA {
           if (x >= 0) success
           else failure("number of iterations q for RandSVD of M2 must be non-negative.")
         )
-
-      opt[Double]("M2-cond-num-ub")
-        .text(s"upper bound of the M2 condition number. default: ${defaultParams.m2ConditionNumberUB}")
-        .action((x, c) => c.copy(m2ConditionNumberUB = x))
-        .validate(x =>
-          if (x > 0.0) success
-          else failure("M2 condition number upper bound must be positive.")
-        )
-
       opt[Int]("max-iter")
         .text(s"number of iterations of ALS. default: ${defaultParams.maxIterations}")
         .action((x, c) => c.copy(maxIterations = x))
@@ -178,8 +159,6 @@ object SpectralLDA {
       params.topicConcentration,
       maxIterations = params.maxIterations,
       tol = params.tolerance,
-      idfLowerBound = params.idfLowerBound,
-      m2ConditionNumberUB = params.m2ConditionNumberUB,
       numIterationsKrylovMethod = params.numIterationsKrylovMethod
     )
     val (beta, alpha, _, _, _) = lda.fit(
