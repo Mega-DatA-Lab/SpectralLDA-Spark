@@ -26,7 +26,6 @@ object SpectralLDA {
                              inputType: String = "obj", // "libsvm", "text" or "obj"
                              k: Int = 1,
                              topicConcentration: Double = 5.0,
-                             minWordsPerDocument: Int = 0,
                              numIterationsKrylovMethod: Int = 1,
                              maxIterations: Int = 500,
                              tolerance: Double = 1e-6,
@@ -56,9 +55,6 @@ object SpectralLDA {
           else failure("topicConcentration must be positive.")
         )
 
-      opt[Int]("min-words")
-        .text(s"minimum count of words for every document. default: ${defaultParams.minWordsPerDocument}")
-        .action((x, c) => c.copy(minWordsPerDocument = x))
       opt[Int]("q")
         .text(s"number of iterations q for RandSVD of M2. default: ${defaultParams.numIterationsKrylovMethod}")
         .action((x, c) => c.copy(numIterationsKrylovMethod = x))
@@ -161,11 +157,7 @@ object SpectralLDA {
       tol = params.tolerance,
       numIterationsKrylovMethod = params.numIterationsKrylovMethod
     )
-    val (beta, alpha, _, _, _) = lda.fit(
-      documents.filter {
-        case (_, tc) => sum(tc) >= params.minWordsPerDocument
-      }
-    )
+    val (beta, alpha, _, _, _) = lda.fit(documents)
     println("Finished ALS algorithm for tensor decomposition.")
 
     val preprocessElapsed: Double = (System.nanoTime() - preprocessStart) / 1e9
