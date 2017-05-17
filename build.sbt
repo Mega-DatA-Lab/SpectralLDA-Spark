@@ -3,7 +3,6 @@ name := "SpectralLDA-Tensor"
 version := "1.1"
 
 scalaVersion := "2.11.8"
-crossScalaVersions := Seq("2.10.6", "2.11.8")
 
 publishMavenStyle := true
 
@@ -60,7 +59,7 @@ assemblyMergeStrategy in assembly ~= (old =>
 
 spName := "FurongHuang/spectrallda-tensorspark"
 
-sparkVersion := "2.1.0"
+sparkVersion := "2.1.1"
 
 sparkComponents += "mllib"
 
