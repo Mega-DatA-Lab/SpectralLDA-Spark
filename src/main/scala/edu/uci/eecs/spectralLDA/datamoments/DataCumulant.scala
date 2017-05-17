@@ -9,7 +9,6 @@ import edu.uci.eecs.spectralLDA.utils.{RandNLA, TensorOps}
 import breeze.linalg._
 import breeze.numerics._
 import breeze.stats.distributions.{Rand, RandBasis}
-import edu.uci.eecs.spectralLDA.textprocessing.TextProcessor
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 

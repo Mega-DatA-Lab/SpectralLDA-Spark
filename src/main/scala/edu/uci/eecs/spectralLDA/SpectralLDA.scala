@@ -7,7 +7,6 @@
 package edu.uci.eecs.spectralLDA
 
 import edu.uci.eecs.spectralLDA.algorithm.TensorLDA
-import edu.uci.eecs.spectralLDA.textprocessing.TextProcessor
 import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, sum}
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -132,10 +131,10 @@ object SpectralLDA {
 
     println("Start reading data...")
     val (documents: RDD[(Long, SparseVector[Double])], vocabArray: Array[String]) = params.inputType match {
-      case "libsvm" =>
-        TextProcessor.processDocuments_libsvm(sc, params.input.mkString(","), params.vocabSize)
-      case "text" =>
-        TextProcessor.processDocuments(sc, params.input.mkString(","), params.stopWordFile, params.vocabSize)
+      // case "libsvm" =>
+      //   TextProcessor.processDocuments_libsvm(sc, params.input.mkString(","), params.vocabSize)
+      // case "text" =>
+      //   TextProcessor.processDocuments(sc, params.input.mkString(","), params.stopWordFile, params.vocabSize)
       case "obj" =>
         (sc.objectFile[(Long, SparseVector[Double])](params.input.mkString(",")), Array[String]())
     }
