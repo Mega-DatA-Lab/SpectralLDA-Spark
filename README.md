@@ -1,11 +1,10 @@
 # Spectral LDA on Spark
 
 ## Summary 
-* This code implements a Spectral (third order tensor decomposition) learning method for learning LDA topic model on Spark.
-* Version: 1.0
+This code implements a Spectral (third order tensor decomposition) learning method for learning LDA topic model on Spark.
 
 ## How do I get set up?
-We use the `sbt` build system. By default we support Scala 2.11.8 and Spark 2.0.0 upward. Cross build to Scala 2.10.6 is also supported. The documentation below supposes we're using Scala 2.11.
+We use the `sbt` build system. By default we support Scala 2.11.8 and Spark 2.0.0 upward.
 
 ### To run from the command line
 1. First compile and package the entire repo.
@@ -28,7 +27,6 @@ We use the `sbt` build system. By default we support Scala 2.11.8 and Spark 2.0.
       --tol <value>            tolerance for the ALS algorithm. default: 1.0E-6
       --input-type <value>     type of input files: "obj", "libsvm" or "text". "obj" for Hadoop SequenceFile of RDD[(Long, SparseVector[Double])]. default: obj
       -o, --output-dir <dir>   output write path. default: .
-      --stopword-file <value>  filepath for a list of stopwords. default: src/main/resources/Data/datasets/StopWords_common.txt
       --help                   prints this usage text
       <input>...               paths of input files   
     ```
