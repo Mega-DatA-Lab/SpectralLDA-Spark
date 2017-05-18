@@ -28,8 +28,7 @@ object SpectralLDA {
                              maxIterations: Int = 500,
                              tolerance: Double = 1e-6,
                              vocabSize: Int = -1,
-                             outputDir: String = ".",
-                             stopWordFile: String = "src/main/resources/Data/datasets/StopWords_common.txt"
+                             outputDir: String = "."
                           )
 
   def main(args: Array[String]): Unit = {
@@ -89,9 +88,6 @@ object SpectralLDA {
           if (Files.exists(Paths.get(x))) success
           else failure(s"Output directory $x doesn't exist.")
         )
-      opt[String]("stopword-file")
-        .text(s"filepath for a list of stopwords. default: ${defaultParams.stopWordFile}")
-        .action((x, c) => c.copy(stopWordFile = x))
 
       help("help").text("prints this usage text")
 
