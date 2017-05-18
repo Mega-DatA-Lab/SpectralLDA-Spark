@@ -6,10 +6,10 @@ package edu.uci.eecs.spectralLDA.algorithm
  * Created by Furong Huang on 11/2/15.
  */
 import edu.uci.eecs.spectralLDA.datamoments.DataCumulant
-import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, argsort, diag, norm}
+import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, argsort, diag, norm, *}
 import breeze.numerics._
 import breeze.stats.distributions.{Rand, RandBasis}
-import edu.uci.eecs.spectralLDA.utils.NonNegativeAdjustment
+import edu.uci.eecs.spectralLDA.utils.L1SimplexProjection
 import org.apache.spark.rdd.RDD
 
 
@@ -69,7 +69,7 @@ class TensorLDA(dimK: Int,
     val alpha = alphaUnordered(idx).toDenseVector
     val topicWordMatrix = topicWordMatrixUnordered(::, idx).toDenseMatrix
 
-    (NonNegativeAdjustment.simplexProj_Matrix(topicWordMatrix), alpha,
+    (topicWordMatrix(::, *).map(L1SimplexProjection.project), alpha,
       cumulant.eigenVectorsM2, cumulant.eigenValuesM2, cumulant.firstOrderMoments)
   }
 

@@ -4,7 +4,7 @@ import org.scalatest._
 import breeze.linalg._
 
 
-class NonNegAdjTest extends FlatSpec with Matchers {
+class L1SimplexProjectionTest extends FlatSpec with Matchers {
   "Simple non-negative adjustment to vectors" should "be correct" in {
     val inputVectors = Seq(
       DenseVector[Double](0.5, 0.5, 0.5),
@@ -27,7 +27,7 @@ class NonNegAdjTest extends FlatSpec with Matchers {
     )
 
     for ((v1, v2) <- inputVectors.zip(expectedAdjustedVectors)) {
-      norm(NonNegativeAdjustment.simplexProj(v1) - v2) should be <= 1e-8
+      norm(L1SimplexProjection.project(v1) - v2) should be <= 1e-8
     }
   }
 }
