@@ -80,9 +80,7 @@ class TensorLDAModel(val topicWordDistribution: DenseMatrix[Double],
 
           // E[log p(doc | theta, beta)]
           termCounts.foreachPair { case (idx, count) =>
-            if (any(localElogbeta(idx, ::).t :> -20.0)) {
-              docBound += count * TensorLDAModel.logSumExp(Elogthetad + localElogbeta(idx, ::).t)
-            }
+            docBound += count * TensorLDAModel.logSumExp(Elogthetad + localElogbeta(idx, ::).t)
           }
 
           // E[log p(theta | alpha) - log q(theta | gamma)]
@@ -94,7 +92,15 @@ class TensorLDAModel(val topicWordDistribution: DenseMatrix[Double],
       }
       .sum()
 
-    corpusPart
+    // Bound component for prob(topic-term distributions):
+    //   E[log p(beta | eta) - log q(beta | lambda)]
+    val eta = 1.0
+    val sumEta = eta * vocabSize
+    val topicsPart = sum((eta - beta) :* Elogbeta) +
+      sum(lgamma(beta) - lgamma(eta)) +
+      sum(lgamma(sumEta) - lgamma(sum(beta(::, breeze.linalg.*))))
+
+    corpusPart + topicsPart
   }
 
 
