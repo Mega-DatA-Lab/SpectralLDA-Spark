@@ -4,51 +4,45 @@
 This code implements a Spectral (third order tensor decomposition) learning method for learning LDA topic model on Spark.
 
 ## How do I get set up?
-We use the `sbt` build system. By default we support Scala 2.11.8 and Spark 2.0.0 upward.
+We use the `sbt` build system. By default we support Scala 2.11.8 and Spark 2.0.0 upward. Just run
 
-### To run from the command line
-1. First compile and package the entire repo.
+```bash
+sbt package
+```
 
-    ```bash
-    sbt package
-    ```
+It will produce `target/scala-2.11/spectrallda-tensor_2.11-1.0.jar`.
     
-    It will produce `target/scala-2.11/spectrallda-tensor_2.11-1.0.jar`.
+### Command Line Usage
+The command line usage is 
     
-2. The command line usage is 
-    
-    ```bash
-    Spectral LDA Factorization
-    Usage: SpectralLDA [options] <input>...
-    
-      -k, --k <value>          number of topics
-      --alpha0 <value>         sum of the topic distribution prior parameter
-      --max-iter <value>       number of iterations of learning. default: 500
-      --tol <value>            tolerance for the ALS algorithm. default: 1.0E-6
-      -o, --output-dir <dir>   output write path. default: .
-      --help                   prints this usage text
-      <input>...               paths of input files   
-    ```
-    
-    Only `k`, `alpha0` and the input file paths are required parameters.
-    
-    The higher `alpha0` is relative to `k` the more likely are we to recover only topic-specific words (vs "common" words that would exist in every topic distribution). If `alpha0 = k` we would allow a non-informative prior for the topic distribution, when every `alpha_i = 1.0`.
-    
-    Currently `input-file` could only be a Hadoop SequenceFiles storing serialised `RDD[(Long, breeze.linalg.SparseVector[Double])]`.
-    
-3. An example call from command line is
+```bash
+Spectral LDA Factorization
+Usage: SpectralLDA [options] <input>...
 
-    ```bash
-    spark-submit \
-    --packages com.github.scopt:scopt_2.11:3.5.0,org.apache.hadoop:hadoop-aws:2.7.3 \
-    --class edu.uci.eecs.spectralLDA.SpectralLDA \
-    target/scala-2.11/spectrallda-tensor_2.11-1.1.jar \
-    -k 5 --alpha0 5.0 -o results \
-    src/main/resources/Data/datasets/synthetic/samples_train_libsvm.txt
-    ```
-    
-    It runs with `alpha0 = k = 5`, specifies the input file in LIBSVM format, and outputs results in `result/`.
-    
+  -k, --k <value>          number of topics
+  --alpha0 <value>         sum of the topic distribution prior parameter
+  --max-iter <value>       number of iterations of learning. default: 500
+  --tol <value>            tolerance for the ALS algorithm. default: 1.0E-6
+  -o, --output-dir <dir>   output write path. default: .
+  --help                   prints this usage text
+  <input>...               paths of input files   
+```
+The higher `alpha0` is relative to `k` the more likely are we to recover only topic-specific words (vs "common" words that would exist in every topic distribution). If `alpha0 = k` we would allow a non-informative prior for the topic distribution, when every `alpha_i = 1.0`.
+
+Currently `input-file` could only be a Hadoop SequenceFiles storing serialised `RDD[(Long, breeze.linalg.SparseVector[Double])]`.
+
+An example call from command line is
+
+```bash
+spark-submit \
+--packages com.github.scopt:scopt_2.11:3.5.0,org.apache.hadoop:hadoop-aws:2.7.3 \
+--class edu.uci.eecs.spectralLDA.SpectralLDA \
+target/scala-2.11/spectrallda-tensor_2.11-1.1.jar \
+-k 5 --alpha0 5.0 -o results <RDD-file>
+```
+
+It runs with `alpha0 = k = 5` and outputs results in `result/`.
+
 ### API usage
 The API is designed following the lines of the Spark built-in `LDA` class.
 
