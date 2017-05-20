@@ -27,7 +27,6 @@ object SpectralLDA {
                              topicConcentration: Double = 5.0,
                              maxIterations: Int = 500,
                              tolerance: Double = 1e-6,
-                             vocabSize: Int = -1,
                              outputDir: String = "."
                           )
 
@@ -66,13 +65,6 @@ object SpectralLDA {
           if (x > 0.0) success
           else failure("tolerance must be positive.")
         )
-
-      opt[Int]('V', "vocabSize").hidden()
-        .text(s"number of distinct word types to use, ordered by frequency. default: ${defaultParams.vocabSize}")
-        .action((x, c) => c.copy(vocabSize = x))
-        .validate(x =>
-          if (x == -1 || x > 0) success
-          else failure("vocabSize must be -1 for all or positive."))
 
       opt[String]("input-type")
         .text(s"""type of input files: "obj", "libsvm" or "text". "obj" for serialised RDD[(Long, SparseVector[Double])] file. default: ${defaultParams.inputType}""")
@@ -127,10 +119,6 @@ object SpectralLDA {
 
     println("Start reading data...")
     val (documents: RDD[(Long, SparseVector[Double])], vocabArray: Array[String]) = params.inputType match {
-      // case "libsvm" =>
-      //   TextProcessor.processDocuments_libsvm(sc, params.input.mkString(","), params.vocabSize)
-      // case "text" =>
-      //   TextProcessor.processDocuments(sc, params.input.mkString(","), params.stopWordFile, params.vocabSize)
       case "obj" =>
         (sc.objectFile[(Long, SparseVector[Double])](params.input.mkString(",")), Array[String]())
     }
