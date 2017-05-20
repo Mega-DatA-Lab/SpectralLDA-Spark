@@ -9,6 +9,7 @@ package edu.uci.eecs.spectralLDA
 import edu.uci.eecs.spectralLDA.algorithm.TensorLDA
 import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, sum}
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.sql.SparkSession
 
 import scalaxy.loops._
 import scala.language.postfixOps
@@ -22,7 +23,7 @@ import java.nio.file.{Files, Paths}
 object SpectralLDA {
   private case class Params(
                              input: Seq[String] = Seq.empty,//use this for customized input
-                             inputType: String = "obj", // "libsvm", "text" or "obj"
+                             inputType: String = "rdd", // "libsvm", "parquet" or "rdd"
                              k: Int = 1,
                              topicConcentration: Double = 5.0,
                              maxIterations: Int = 500,
@@ -66,12 +67,12 @@ object SpectralLDA {
           else failure("tolerance must be positive.")
         )
 
-      opt[String]("input-type")
-        .text(s"""type of input files: "obj", "libsvm" or "text". "obj" for serialised RDD[(Long, SparseVector[Double])] file. default: ${defaultParams.inputType}""")
+      opt[String]("input-type").hidden()
+        .text(s"""type of input files: "rdd", "libsvm" or "parquet". default: ${defaultParams.inputType}""")
         .action((x, c) => c.copy(inputType = x))
         .validate(x =>
-          if (x == "obj" || x == "libsvm" || x == "text") success
-          else failure("""inputType must be "obj", "libsvm" or "text".""")
+          if (x == "rdd" || x == "libsvm" || x == "parquet") success
+          else failure("""inputType must be "rdd", "libsvm" or "parquet".""")
         )
       opt[String]('o', "output-dir").valueName("<dir>")
         .text(s"output write path. default: ${defaultParams.outputDir}")
@@ -113,13 +114,17 @@ object SpectralLDA {
     val applicationStart: Long = System.nanoTime()
     val preprocessStart: Long = System.nanoTime()
 
-    val conf: SparkConf = new SparkConf().setAppName(s"Spectral LDA via Tensor Decomposition: $params")
+    val conf: SparkConf = new SparkConf()
+      .setAppName(s"Spectral LDA via Tensor Decomposition: $params")
     val sc: SparkContext = new SparkContext(conf)
-    println("Generated the SparkConetxt")
 
     println("Start reading data...")
     val (documents: RDD[(Long, SparseVector[Double])], vocabArray: Array[String]) = params.inputType match {
-      case "obj" =>
+      case "libsvm" =>
+        throw new scala.NotImplementedError("Not implemented for reading libsvm")
+      case "parquet" =>
+        throw new scala.NotImplementedError("Not implemented for reading parquet")
+      case "rdd" =>
         (sc.objectFile[(Long, SparseVector[Double])](params.input.mkString(",")), Array[String]())
     }
     println("Finished reading data.")
@@ -138,6 +143,8 @@ object SpectralLDA {
     val numDocs: Double = documents.countApprox(30000L).getFinalValue.mean
     val dimVocab: Int = documents.map(_._2.length).take(1)(0)
     sc.stop()
+
+
     println()
     println("Corpus summary:")
     println(s"\t Training set size: ~$numDocs documents")
