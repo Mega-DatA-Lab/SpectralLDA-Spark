@@ -1,6 +1,7 @@
 package edu.uci.eecs.spectralLDA
 
 import breeze.linalg.sum
+import breeze.numerics.log
 import org.apache.spark.{SparkConf, SparkContext}
 import edu.uci.eecs.spectralLDA.algorithm._
 import org.apache.spark.rdd._
@@ -17,12 +18,7 @@ object CVLogPerplexity {
     val k = args(2).toInt
     val alpha0 = args(3).toDouble
 
-    val minWords = args(4).toInt
-
     val docs = sc.objectFile[(Long, breeze.linalg.SparseVector[Double])](documentsPath)
-      .filter {
-        case (_, tc) => sum(tc) >= minWords
-      }
 
     for (i <- 0 until cv) {
       val splits = docs.randomSplit(Array[Double](0.9, 0.1))
@@ -46,6 +42,7 @@ object CVLogPerplexity {
       alpha0 = alpha0
     )
     val (beta, alpha, _, _, m1) = tensorLDA.fit(splits(0))
+    println(s"Baseline log-perplexity: ${- log(m1).t * m1}")
 
     val augBeta = breeze.linalg.DenseMatrix.zeros[Double](beta.rows, k + 1)
     val augAlpha = breeze.linalg.DenseVector.ones[Double](alpha.length + 1)
@@ -74,7 +71,7 @@ object CVLogPerplexity {
       .setMiniBatchFraction(0.05)
     val lda = new LDA()
       .setOptimizer(ldaOptimizer)
-      .setMaxIterations(80)
+      .setMaxIterations(15)
       .setK(k)
       .setDocConcentration(alpha0 / k.toDouble)
       .setBeta(1.0)

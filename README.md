@@ -10,7 +10,7 @@ We use the `sbt` build system. By default we support Scala 2.11.8 and Spark 2.0.
 sbt package
 ```
 
-It will produce `target/scala-2.11/spectrallda-tensor_2.11-1.0.jar`.
+It will produce `target/scala-2.11/spectrallda-tensor_2.11-1.1.jar`.
     
 ### Command Line Usage
 The command line usage is 
