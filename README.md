@@ -3,6 +3,8 @@
 ## Summary 
 This code implements a Spectral (third order tensor decomposition) learning method for learning LDA topic model on Spark.
 
+The Spectral learning method works with empirical counts of word pair or word triplet that appear in the same document. We collect and average them across documents. If we denote these empirical moments as tensors, we could orthogonalise and then perform the CANDECOMP/PARAFAC Decomposition on the 3rd-order moment tensor to recover the topic-word distributions of the LDA model. For more details, please refer to `report.pdf` in this repository.
+
 ## How do I get set up?
 We use the `sbt` build system. By default we support Scala 2.11.8 and Spark 2.0.0 upward. Just run
 
