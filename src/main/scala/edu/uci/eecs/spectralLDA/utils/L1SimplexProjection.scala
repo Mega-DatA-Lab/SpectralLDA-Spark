@@ -23,8 +23,8 @@ object L1SimplexProjection {
     val len: Int = V.length
     val U: DenseVector[Double] = DenseVector(V.copy.toArray.sortWith(_ > _))
     val cums: DenseVector[Double] = DenseVector(AlgebraUtil.Cumsum(U.toArray).map(x => x-1))
-    val Index: DenseVector[Double] = DenseVector((1 to (len + 1)).toArray.map(x => 1.0/x.toDouble))
-    val InterVec: DenseVector[Double] = cums :* Index
+    val Index: DenseVector[Double] = DenseVector((1 to len).toArray.map(x => 1.0/x.toDouble))
+    val InterVec: DenseVector[Double] = cums *:* Index
     val TobefindMax: DenseVector[Double] = U - InterVec
     var maxIndex : Int = 0
     // find maxIndex
