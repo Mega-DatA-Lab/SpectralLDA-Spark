@@ -36,7 +36,7 @@ class TensorLDAModel(val topicWordDistribution: DenseMatrix[Double],
     val expElogthetad: DenseVector[Double] = exp(TensorLDAModel.dirichletExpectation(gammad))  // K
     val expElogbetad = beta(termCounts.activeKeysIterator.toSeq, ::).toDenseMatrix    // ids * K
 
-    val phiNorm: DenseVector[Double] = expElogbetad * expElogthetad :+ 1e-100            // ids
+    val phiNorm: DenseVector[Double] = expElogbetad * expElogthetad +:+ 1e-100            // ids
     var meanGammaChange = 1D
     val ctsVector = DenseVector[Double](termCounts.activeValuesIterator.toSeq: _*)                                         // ids
 
@@ -45,10 +45,10 @@ class TensorLDAModel(val topicWordDistribution: DenseMatrix[Double],
     while (iter < maxIterations && meanGammaChange > 1e-3) {
       val lastgamma = gammad.copy
       //        K                  K * ids               ids
-      gammad := (expElogthetad :* (expElogbetad.t * (ctsVector :/ phiNorm))) :+ alpha
+      gammad := (expElogthetad *:* (expElogbetad.t * (ctsVector /:/ phiNorm))) +:+ alpha
       expElogthetad := exp(TensorLDAModel.dirichletExpectation(gammad))
       // TODO: Keep more values in log space, and only exponentiate when needed.
-      phiNorm := expElogbetad * expElogthetad :+ 1e-100
+      phiNorm := expElogbetad * expElogthetad +:+ 1e-100
       meanGammaChange = sum(abs(gammad - lastgamma)) / k
 
       iter += 1
@@ -84,7 +84,7 @@ class TensorLDAModel(val topicWordDistribution: DenseMatrix[Double],
           }
 
           // E[log p(theta | alpha) - log q(theta | gamma)]
-          docBound += sum((alpha - gammad) :* Elogthetad)
+          docBound += sum((alpha - gammad) *:* Elogthetad)
           docBound += sum(lgamma(gammad) - lgamma(alpha))
           docBound += lgamma(sum(alpha)) - lgamma(sum(gammad))
 
@@ -122,7 +122,7 @@ private[algorithm] object TensorLDAModel {
     assert(x forall(_ > - 1e-12))
 
     val coeff: Double = lgamma(sum(x) + 1) - sum(x.map(a => lgamma(a + 1)))
-    coeff + sum(x :* log(p))
+    coeff + sum(x *:* log(p))
   }
 
   def dirichletExpectation(alpha: DenseVector[Double]): DenseVector[Double] = {
@@ -131,6 +131,6 @@ private[algorithm] object TensorLDAModel {
 
   def logSumExp(x: DenseVector[Double]): Double = {
     val a = max(x)
-    a + log(sum(exp(x :- a)))
+    a + log(sum(exp(x -:- a)))
   }
 }

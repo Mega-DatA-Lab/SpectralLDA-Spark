@@ -31,7 +31,7 @@ object AlgebraUtil {
     val dprod = diag(oldA.t * newA)
     println(s"dot(oldA, newA): ${diag(oldA.t * newA)}")
 
-    all(dprod :> dotProductThreshold)
+    all(dprod >:> dotProductThreshold)
   }
 
   def Cumsum(xs: Array[Double]): Array[Double] = {

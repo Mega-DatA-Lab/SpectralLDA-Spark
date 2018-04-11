@@ -77,7 +77,7 @@ object TensorOps {
   def to_invert(c: DenseMatrix[Double], b: DenseMatrix[Double]): DenseMatrix[Double] = {
     val ctc: DenseMatrix[Double] = c.t * c
     val btb: DenseMatrix[Double] = b.t * b
-    val to_be_inverted: DenseMatrix[Double] = ctc :* btb
+    val to_be_inverted: DenseMatrix[Double] = ctc *:* btb
     breeze.linalg.pinv(to_be_inverted)
   }
 
