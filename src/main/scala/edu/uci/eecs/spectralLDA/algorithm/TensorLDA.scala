@@ -75,15 +75,22 @@ class TensorLDA(dimK: Int,
 
   private def uniqueFactor(nu1: DenseMatrix[Double],
                            nu2: DenseMatrix[Double],
-                           nu3: DenseMatrix[Double],
-                           eps: Double = 1e-6): DenseMatrix[Double] = {
+                           nu3: DenseMatrix[Double]): DenseMatrix[Double] = {
     val nu = nu1.copy
+    val eps = 1e-12
     for (j <- 0 until nu1.cols) {
-      if (norm(nu1(::, j) - nu2(::, j)) < eps)
-        nu(::, j) := nu3(::, j)
-      else if (norm(nu1(::, j) - nu3(::, j)) < eps)
+      val diff1 = norm(nu2(::, j) - nu3(::, j))
+      val diff2 = norm(nu1(::, j) - nu3(::, j))
+      val diff3 = norm(nu1(::, j) - nu2(::, j))
+
+      if (diff1 < diff2 + eps && diff1 < diff3 + eps)
+        nu(::, j) := nu1(::, j)
+      else if (diff2 < diff1 + eps && diff2 < diff3 + eps)
         nu(::, j) := nu2(::, j)
+      else if (diff3 < diff1 + eps && diff3 < diff2 + eps)
+        nu(::, j) := nu3(::, j)
     }
+
     nu
   }
 }
