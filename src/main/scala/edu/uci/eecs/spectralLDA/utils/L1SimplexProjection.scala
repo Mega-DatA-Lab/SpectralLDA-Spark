@@ -1,6 +1,6 @@
 package edu.uci.eecs.spectralLDA.utils
 
-import breeze.linalg.{DenseMatrix, DenseVector, max, min}
+import breeze.linalg.{DenseVector, max}
 
 import scala.util.control.Breaks._
 import scalaxy.loops._
@@ -22,7 +22,7 @@ object L1SimplexProjection {
     // val z:Double = 1.0
     val len: Int = V.length
     val U: DenseVector[Double] = DenseVector(V.copy.toArray.sortWith(_ > _))
-    val cums: DenseVector[Double] = DenseVector(AlgebraUtil.Cumsum(U.toArray).map(x => x-1))
+    val cums: DenseVector[Double] = DenseVector(cumsum(U.toArray).map(x => x-1))
     val Index: DenseVector[Double] = DenseVector((1 to len).toArray.map(x => 1.0/x.toDouble))
     val InterVec: DenseVector[Double] = cums *:* Index
     val TobefindMax: DenseVector[Double] = U - InterVec
@@ -39,5 +39,9 @@ object L1SimplexProjection {
     val theta: Double = InterVec(maxIndex)
     val P_norm: DenseVector[Double] = max(V - theta, 0.0)
     P_norm
+  }
+
+  private def cumsum(xs: Array[Double]): Array[Double] = {
+    xs.scanLeft(0.0)(_ + _).tail
   }
 }

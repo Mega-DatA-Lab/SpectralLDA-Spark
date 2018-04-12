@@ -6,9 +6,10 @@ package edu.uci.eecs.spectralLDA.algorithm
 * Created by Furong Huang on 11/2/15.
 */
 
-import edu.uci.eecs.spectralLDA.utils.{AlgebraUtil, TensorOps}
-import breeze.linalg.{*, DenseMatrix, DenseVector, diag, max, min, norm, svd}
+import edu.uci.eecs.spectralLDA.utils.TensorOps
+import breeze.linalg.{*, DenseMatrix, DenseVector, all, diag, max, min, norm, svd}
 import breeze.stats.distributions.{Gaussian, Rand, RandBasis}
+import scalaxy.loops._
 
 /** CANDECOMP/PARAFAC Decomposition via Alternating Least Square (ALS)
   *
@@ -65,7 +66,7 @@ class ALS(dimK: Int,
       println("Start ALS iterations...")
       var iter: Int = 0
       while ((iter == 0) || (iter < maxIterations &&
-        !AlgebraUtil.isConverged(A_prev, A, dotProductThreshold = 1 - tol))) {
+        !isConverged(A_prev, A, dotProductThreshold = 1 - tol))) {
         A_prev = A.copy
 
         val (updatedA, updatedLambda1) = updateALSIteration(tensor3D, B, C)
@@ -106,6 +107,29 @@ class ALS(dimK: Int,
                                  C: DenseMatrix[Double]): (DenseMatrix[Double], DenseVector[Double]) = {
     val updatedA = unfoldedM3 * TensorOps.krprod(C, B) * TensorOps.to_invert(C, B)
     val lambda = norm(updatedA(::, *)).t.toDenseVector
-    (AlgebraUtil.matrixNormalization(updatedA), lambda)
+    (matrixNormalization(updatedA), lambda)
+  }
+
+  private def matrixNormalization(B: DenseMatrix[Double]): DenseMatrix[Double] = {
+    val A: DenseMatrix[Double] = B.copy
+    val colNorms: DenseVector[Double] = norm(A(::, *)).t.toDenseVector
+
+    for (i <- 0 until A.cols optimized) {
+      A(::, i) :/= colNorms(i)
+    }
+    A
+  }
+
+  private def isConverged(oldA: DenseMatrix[Double],
+                  newA: DenseMatrix[Double],
+                  dotProductThreshold: Double): Boolean = {
+    if (oldA == null || oldA.size == 0) {
+      return false
+    }
+
+    val dprod = diag(oldA.t * newA)
+    println(s"dot(oldA, newA): ${diag(oldA.t * newA)}")
+
+    all(dprod >:> dotProductThreshold)
   }
 }
