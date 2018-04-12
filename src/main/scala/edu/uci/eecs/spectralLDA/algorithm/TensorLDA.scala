@@ -15,18 +15,27 @@ import org.apache.spark.rdd.RDD
 
 /** Spectral LDA model
   *
-  * @param dimK                 number of topics k
-  * @param alpha0               sum of alpha for the Dirichlet prior for topic distribution
-  * @param maxIterations        max number of iterations for the ALS algorithm for CP decomposition
-  * @param tol                  tolerance. the dot product threshold in ALS is 1-tol
-  * @param randomisedSVD        uses randomised SVD on M2, true by default
+  * @param dimK                       number of topics k
+  * @param alpha0                     sum of alpha for the Dirichlet prior
+  * @param maxIterations              max number of iterations for the ALS,
+  *                                   500 by default
+  * @param tol                        tolerance for checking convergence
+  *                                   of ALS, 1e-6 by default
+  * @param randomisedSVD              uses randomised SVD on M2,
+  *                                   true by default
+  * @param numIterationsKrylovMethod  iterations of the Krylov Method for
+  *                                   randomised SVD, 2 by default
+  * @param postProcessing             post-processing topic-word distribution
+  *                                   matrix by projection into l1-simplex,
+  *                                   false by default
   */
 class TensorLDA(dimK: Int,
                 alpha0: Double,
                 maxIterations: Int = 500,
                 tol: Double = 1e-6,
                 randomisedSVD: Boolean = true,
-                numIterationsKrylovMethod: Int = 2) extends Serializable {
+                numIterationsKrylovMethod: Int = 2,
+                postProcessing: Boolean = false) extends Serializable {
   assert(dimK > 0, "The number of topics dimK must be positive.")
   assert(alpha0 > 0, "The topic concentration alpha0 must be positive.")
   assert(maxIterations > 0, "The number of iterations for ALS must be positive.")
@@ -69,8 +78,14 @@ class TensorLDA(dimK: Int,
     val alpha = alphaUnordered(idx).toDenseVector
     val topicWordMatrix = topicWordMatrixUnordered(::, idx).toDenseMatrix
 
-    (topicWordMatrix(::, *).map(L1SimplexProjection.project), alpha,
-      cumulant.eigenVectorsM2, cumulant.eigenValuesM2, cumulant.firstOrderMoments)
+    if (postProcessing)
+      (topicWordMatrix(::, *).map(L1SimplexProjection.project), alpha,
+        cumulant.eigenVectorsM2, cumulant.eigenValuesM2,
+        cumulant.firstOrderMoments)
+    else
+      (topicWordMatrix, alpha,
+       cumulant.eigenVectorsM2, cumulant.eigenValuesM2,
+       cumulant.firstOrderMoments)
   }
 
   private def uniqueFactor(nu1: DenseMatrix[Double],
