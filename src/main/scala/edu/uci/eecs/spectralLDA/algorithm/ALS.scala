@@ -10,6 +10,7 @@ import edu.uci.eecs.spectralLDA.utils.TensorOps
 import breeze.linalg.{*, DenseMatrix, DenseVector, all, diag, max, min, norm, svd}
 import breeze.stats.distributions.{Gaussian, Rand, RandBasis}
 import scalaxy.loops._
+import scala.language.postfixOps
 
 /** CANDECOMP/PARAFAC Decomposition via Alternating Least Square (ALS)
   *
@@ -38,7 +39,8 @@ class ALS(dimK: Int,
   /** Run Alternating Least Squares (ALS)
     *
     * @param randBasis   default random seed
-    * @return            three dimK-by-dimK matrices with all the $beta_i$ as columns,
+    * @return            three dimK-by-dimK matrices with
+    *                    all the <math>beta_i</math> as columns,
     *                    length-dimK vector for all the eigenvalues
     */
   def run(implicit randBasis: RandBasis = Rand)
