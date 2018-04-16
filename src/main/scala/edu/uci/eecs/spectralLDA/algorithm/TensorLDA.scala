@@ -108,4 +108,18 @@ class TensorLDA(dimK: Int,
 
     nu
   }
+
+  def describeTopics(beta: DenseMatrix[Double],
+                     vocab: Array[(String, Int)],
+                     topWords: Int = 10) = {
+    val vocabMap = vocab.map {
+      case (w, wid) => (wid, w)
+    }.toMap
+
+    for (j <- 0 until beta.cols) {
+      val topWordIds = argsort(beta(::, j)).reverse.take(topWords)
+      val words = topWordIds map vocabMap
+      println(s"Topic $j: $words")
+    }
+  }
 }
