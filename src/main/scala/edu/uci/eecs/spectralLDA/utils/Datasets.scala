@@ -76,38 +76,24 @@ object Datasets {
     (features, vocabFeatures.map(x => (x._1, x._3)).collect)
   }
 
-  def readUciBagOfWordsBreeze(sc: SparkContext,
-                              docWordFilePath: String,
-                              vocabFilePath: String,
-                              maxFeatures: Int)
-  : (RDD[(Long, brSparseVector[Double])], Array[(String, Int)]) = {
-    val (features, vocabFeatures) = readUciBagOfWords(
-      sc, docWordFilePath, vocabFilePath, maxFeatures
-    )
-
-    val docs = features.groupByKey()
+  def uciBowFeaturesToBreeze(features: RDD[(Long, (Int, Double))],
+                             maxFeatures: Int)
+  : RDD[(Long, brSparseVector[Double])] = {
+    features
+      .groupByKey()
       .mapValues {
         x => brSparseVector[Double](maxFeatures)(x.toSeq: _*)
       }
-
-    (docs, vocabFeatures)
   }
 
-  def readUciBagOfWordsMllib(sc: SparkContext,
-                             docWordFilePath: String,
-                             vocabFilePath: String,
-                             maxFeatures: Int)
-  : (RDD[(Long, mlVector)], Array[(String, Int)])= {
-    val (features, vocabFeatures) = readUciBagOfWords(
-      sc, docWordFilePath, vocabFilePath, maxFeatures
-    )
-
-    val docs = features.groupByKey()
+  def uciBowFeaturesToMllib(features: RDD[(Long, (Int, Double))],
+                            maxFeatures: Int)
+  : RDD[(Long, mlVector)] = {
+    features
+      .groupByKey()
       .mapValues {
         x => mlVectors.sparse(maxFeatures, x.toSeq)
       }
-
-    (docs, vocabFeatures)
   }
 
 }
