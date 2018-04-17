@@ -1,4 +1,4 @@
-package edu.uci.eecs.spectralLDA.utils
+package edu.uci.eecs.spectralLDA.algorithm
 
 import breeze.linalg._
 import breeze.linalg.qr.QR

@@ -1,7 +1,7 @@
-package edu.uci.eecs.spectralLDA.utils
+package edu.uci.eecs.spectralLDA.algorithm
 
-import org.scalatest._
 import breeze.linalg._
+import org.scalatest._
 
 
 class L1SimplexProjectionTest extends FlatSpec with Matchers {

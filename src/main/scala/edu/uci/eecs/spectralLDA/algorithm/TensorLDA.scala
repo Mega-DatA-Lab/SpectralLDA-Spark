@@ -11,7 +11,7 @@ import breeze.stats.distributions.{Rand, RandBasis}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.mllib.linalg.{Vector => mlVector}
 import edu.uci.eecs.spectralLDA.datamoments.DataCumulant
-import edu.uci.eecs.spectralLDA.utils.{Datasets, L1SimplexProjection}
+import edu.uci.eecs.spectralLDA.utils.Datasets
 
 
 /** Spectral LDA model

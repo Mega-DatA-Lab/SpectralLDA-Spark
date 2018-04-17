@@ -5,10 +5,11 @@ package edu.uci.eecs.spectralLDA.datamoments
  * Created by Furong Huang on 11/2/15.
  */
 
-import edu.uci.eecs.spectralLDA.utils.{RandNLA, Tensors}
+import edu.uci.eecs.spectralLDA.utils.Tensors
 import breeze.linalg._
 import breeze.numerics._
 import breeze.stats.distributions.{Rand, RandBasis}
+import edu.uci.eecs.spectralLDA.algorithm.RandNLA
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 

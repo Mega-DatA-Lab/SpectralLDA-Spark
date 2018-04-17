@@ -1,10 +1,10 @@
-package edu.uci.eecs.spectralLDA.utils
+package edu.uci.eecs.spectralLDA.algorithm
 
 import breeze.linalg.{DenseVector, max}
-
-import scala.util.control.Breaks._
 import scalaxy.loops._
+
 import scala.language.postfixOps
+import scala.util.control.Breaks._
 
 object L1SimplexProjection {
   /** Projection of a vector onto a simplex

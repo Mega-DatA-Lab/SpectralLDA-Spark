@@ -1,9 +1,9 @@
-package edu.uci.eecs.spectralLDA.utils
+package edu.uci.eecs.spectralLDA.algorithm
 
 import breeze.linalg.eigSym.EigSym
 import breeze.linalg.qr.QR
-import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, argtopk, cholesky, eigSym, inv, qr, svd}
-import breeze.numerics.{pow, sqrt}
+import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, argtopk, eigSym, qr}
+import breeze.numerics.sqrt
 import breeze.stats.distributions.{Gaussian, Rand, RandBasis}
 import org.apache.spark.rdd.RDD
 
@@ -116,14 +116,14 @@ object RandNLA {
   }
 
   /** Given a test matrix q returns the product of shifted M2 and q */
-  private[utils] def randomProjectM2(alpha0: Double,
-                                     vocabSize: Int,
-                                     dimK: Int,
-                                     slackDimK: Int,
-                                     numDocs: Long,
-                                     firstOrderMoments: DenseVector[Double],
-                                     documents: RDD[(Long, Double, SparseVector[Double])],
-                                     q: DenseMatrix[Double]): DenseMatrix[Double] = {
+  private[algorithm] def randomProjectM2(alpha0: Double,
+                                         vocabSize: Int,
+                                         dimK: Int,
+                                         slackDimK: Int,
+                                         numDocs: Long,
+                                         firstOrderMoments: DenseVector[Double],
+                                         documents: RDD[(Long, Double, SparseVector[Double])],
+                                         q: DenseMatrix[Double]): DenseMatrix[Double] = {
     val para_main: Double = (alpha0 + 1.0) * alpha0
     val para_shift: Double = alpha0 * alpha0
 
@@ -158,9 +158,9 @@ object RandNLA {
     * @param len total word count
     * @return    M2*S, i.e (Wc*Wc.t-diag(Wc))/(len*(len-1.0))*S
     */
-  private[utils] def accumulate_M_mul_S(S: breeze.linalg.DenseMatrix[Double],
-                                        Wc: breeze.linalg.SparseVector[Double],
-                                        len: Double)
+  private[algorithm] def accumulate_M_mul_S(S: breeze.linalg.DenseMatrix[Double],
+                                            Wc: breeze.linalg.SparseVector[Double],
+                                            len: Double)
         : Seq[(Int, DenseVector[Double])] = {
     val len_calibrated: Double = math.max(len, 3.0)
     val norm_length: Double = 1.0 / (len_calibrated * (len_calibrated - 1.0))
