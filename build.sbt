@@ -1,6 +1,6 @@
 name := "SpectralLDA-Tensor"
 
-version := "1.2.7"
+version := "1.2.9"
 
 scalaVersion := "2.11.12"
 

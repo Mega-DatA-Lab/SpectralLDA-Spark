@@ -121,17 +121,37 @@ class TensorLDA(dimK: Int,
     nu
   }
 
+}
+
+object TensorLDA {
+
   def describeTopics(beta: DenseMatrix[Double],
-                     vocab: Array[(String, Int)],
-                     topWords: Int = 10) = {
+                     maxTermsPerTopic: Int)
+  : Array[(Array[Int], Array[Double])] = {
+    val topics =
+      for (j <- 0 until beta.cols) yield {
+        val topTermIds = argsort(beta(::, j)).reverse.take(maxTermsPerTopic)
+        (topTermIds.toArray, beta(topTermIds, j).toArray)
+      }
+    topics.toArray
+  }
+
+  def describeTopicsInWords(beta: DenseMatrix[Double],
+                            vocab: Array[(String, Int)],
+                            maxTermsPerTopic: Int)
+  : Array[(Array[String], Array[Double])] = {
     val vocabMap = vocab.map {
       case (w, wid) => (wid, w)
     }.toMap
 
-    for (j <- 0 until beta.cols) {
-      val topWordIds = argsort(beta(::, j)).reverse.take(topWords)
-      val words = topWordIds map vocabMap
-      println(s"Topic $j: $words")
-    }
+    val topics =
+      for (j <- 0 until beta.cols) yield {
+        val topTermIds = argsort(beta(::, j)).reverse.take(maxTermsPerTopic)
+        val topTermWords = topTermIds map vocabMap
+        println(s"Topic $j: ${topTermWords.mkString(", ")}")
+        (topTermWords.toArray, beta(topTermIds, j).toArray)
+      }
+    topics.toArray
   }
+
 }
