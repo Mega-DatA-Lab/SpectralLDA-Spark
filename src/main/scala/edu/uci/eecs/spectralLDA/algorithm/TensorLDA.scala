@@ -5,12 +5,13 @@ package edu.uci.eecs.spectralLDA.algorithm
  * Alternating Least Square algorithm is implemented.
  * Created by Furong Huang on 11/2/15.
  */
-import edu.uci.eecs.spectralLDA.datamoments.DataCumulant
-import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, argsort, diag, norm, *}
+import breeze.linalg.{*, DenseMatrix, DenseVector, SparseVector, argsort, diag, norm}
 import breeze.numerics._
 import breeze.stats.distributions.{Rand, RandBasis}
-import edu.uci.eecs.spectralLDA.utils.L1SimplexProjection
 import org.apache.spark.rdd.RDD
+import org.apache.spark.mllib.linalg.{Vector => mlVector}
+import edu.uci.eecs.spectralLDA.datamoments.DataCumulant
+import edu.uci.eecs.spectralLDA.utils.{Datasets, L1SimplexProjection}
 
 
 /** Spectral LDA model
@@ -86,6 +87,17 @@ class TensorLDA(dimK: Int,
       (topicWordMatrix, alpha,
        cumulant.eigenVectorsM2, cumulant.eigenValuesM2,
        cumulant.firstOrderMoments)
+  }
+
+  def fit2(documents: RDD[(Long, mlVector)])
+          (implicit randBasis: RandBasis = Rand)
+  : (DenseMatrix[Double], DenseVector[Double],
+    DenseMatrix[Double], DenseVector[Double],
+    DenseVector[Double]) = {
+    val mlDocuments = documents map {
+      case (docid, v) => (docid, Datasets.mllibToBreeze(v))
+    }
+    fit(mlDocuments)(randBasis)
   }
 
   private def uniqueFactor(nu1: DenseMatrix[Double],
