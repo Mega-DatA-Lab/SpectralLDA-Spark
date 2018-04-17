@@ -3,7 +3,7 @@ package edu.uci.eecs.spectralLDA.datamoments
 import breeze.linalg._
 import breeze.stats.distributions.{Dirichlet, Multinomial}
 import breeze.numerics.sqrt
-import edu.uci.eecs.spectralLDA.utils.TensorOps
+import edu.uci.eecs.spectralLDA.utils.Tensors
 import org.scalatest._
 import org.scalatest.Matchers._
 
@@ -67,7 +67,7 @@ class DataCumulantTest extends FlatSpec with Matchers {
       documents
     )
 
-    TensorOps.dmatrixNorm(cumulant.thirdOrderMoments - expectedM3) should be <= 1e-6
+    Tensors.dmatrixNorm(cumulant.thirdOrderMoments - expectedM3) should be <= 1e-6
   }
 
   private def expected_whitened_M3(dimK: Int,

@@ -7,7 +7,7 @@ import breeze.storage.Zero
 import scala.reflect.ClassTag
 
 
-object TensorOps {
+object Tensors {
   /** Complex matrix norm */
   def matrixNorm(m: DenseMatrix[Complex]): Double = {
     norm(norm(m(::, *)).t.toDenseVector)

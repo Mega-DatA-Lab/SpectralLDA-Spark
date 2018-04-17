@@ -10,7 +10,7 @@ import scalaxy.loops._
 import scala.language.postfixOps
 
 
-class TensorOpsTest extends FlatSpec with Matchers {
+class TensorsTest extends FlatSpec with Matchers {
   def expectedRankOneTensor3d[@specialized(Double) V : ClassTag : Zero : Numeric : Semiring]
     (x: DenseVector[V], y: DenseVector[V], z: DenseVector[V]): DenseMatrix[V] = {
     val d1 = x.length
@@ -38,7 +38,7 @@ class TensorOpsTest extends FlatSpec with Matchers {
     val y = DenseVector.rand[Double](50)
     val z = DenseVector.rand[Double](50)
 
-    val tensor = TensorOps.makeRankOneTensor3d(x, y, z)
+    val tensor = Tensors.makeRankOneTensor3d(x, y, z)
     val expected = expectedRankOneTensor3d(x, y, z)
 
     val diff = tensor - expected

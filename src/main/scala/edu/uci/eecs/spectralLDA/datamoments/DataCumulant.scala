@@ -5,7 +5,7 @@ package edu.uci.eecs.spectralLDA.datamoments
  * Created by Furong Huang on 11/2/15.
  */
 
-import edu.uci.eecs.spectralLDA.utils.{RandNLA, TensorOps}
+import edu.uci.eecs.spectralLDA.utils.{RandNLA, Tensors}
 import breeze.linalg._
 import breeze.numerics._
 import breeze.stats.distributions.{Rand, RandBasis}
@@ -91,7 +91,7 @@ object DataCumulant {
       else {
         val E_x1_x2: DenseMatrix[Double] = validDocuments
           .map { case (_, len, vec) =>
-            (TensorOps.spVectorTensorProd2d(vec) - diag(vec)) / (len * (len - 1))
+            (Tensors.spVectorTensorProd2d(vec) - diag(vec)) / (len * (len - 1))
           }
           .reduce(_ + _)
           .map(_ / numDocs.toDouble).toDenseMatrix
@@ -168,7 +168,7 @@ object DataCumulant {
       .map(_ / numDocs.toDouble)
 
     // sketch of q=W^T M1
-    val q_otimes_3 = 2 * alpha0 * alpha0 / ((alpha0 + 1) * (alpha0 + 2)) * TensorOps.makeRankOneTensor3d(
+    val q_otimes_3 = 2 * alpha0 * alpha0 / ((alpha0 + 1) * (alpha0 + 2)) * Tensors.makeRankOneTensor3d(
       firstOrderMoments_whitened, firstOrderMoments_whitened, firstOrderMoments_whitened
     )
 
@@ -200,10 +200,10 @@ object DataCumulant {
     val coeff2 = 1.0 / (len * (len - 1))
     val h1 = alpha0 / (alpha0 + 2)
 
-    val s1 = TensorOps.makeRankOneTensor3d(p, p, p)
-    val s2 = TensorOps.makeRankOneTensor3d(p, p, q)
-    val s3 = TensorOps.makeRankOneTensor3d(p, q, p)
-    val s4 = TensorOps.makeRankOneTensor3d(q, p, p)
+    val s1 = Tensors.makeRankOneTensor3d(p, p, p)
+    val s2 = Tensors.makeRankOneTensor3d(p, p, q)
+    val s3 = Tensors.makeRankOneTensor3d(p, q, p)
+    val s4 = Tensors.makeRankOneTensor3d(q, p, p)
 
     coeff1 * s1 - coeff2 * h1 * (s2 + s3 + s4)
   }
@@ -253,9 +253,9 @@ object DataCumulant {
       : DenseMatrix[Double] = {
     val w: DenseVector[Double] = W(i, ::).t
 
-    val prod1 = TensorOps.makeRankOneTensor3d(w, w, x)
-    val prod2 = TensorOps.makeRankOneTensor3d(w, x, w)
-    val prod3 = TensorOps.makeRankOneTensor3d(x, w, w)
+    val prod1 = Tensors.makeRankOneTensor3d(w, w, x)
+    val prod2 = Tensors.makeRankOneTensor3d(w, x, w)
+    val prod3 = Tensors.makeRankOneTensor3d(x, w, w)
 
     prod1 + prod2 + prod3
   }
@@ -266,7 +266,7 @@ object DataCumulant {
       : DenseMatrix[Double] = {
     val w: DenseVector[Double] = W(i, ::).t
 
-    val z = TensorOps.makeRankOneTensor3d(w, w, w)
+    val z = Tensors.makeRankOneTensor3d(w, w, w)
 
     z * p
   }

@@ -6,7 +6,7 @@ package edu.uci.eecs.spectralLDA.algorithm
 * Created by Furong Huang on 11/2/15.
 */
 
-import edu.uci.eecs.spectralLDA.utils.TensorOps
+import edu.uci.eecs.spectralLDA.utils.Tensors
 import breeze.linalg.{*, DenseMatrix, DenseVector, all, diag, max, min, norm, svd}
 import breeze.stats.distributions.{Gaussian, Rand, RandBasis}
 import scalaxy.loops._
@@ -89,7 +89,7 @@ class ALS(dimK: Int,
       }
       println("Finished ALS iterations.")
 
-      reconstructedLoss = TensorOps.dmatrixNorm(tensor3D - A * diag(lambda) * TensorOps.krprod(C, B).t)
+      reconstructedLoss = Tensors.dmatrixNorm(tensor3D - A * diag(lambda) * Tensors.krprod(C, B).t)
       println(s"Reconstructed loss: $reconstructedLoss\tOptimal reconstructed loss: $optimalReconstructedLoss")
 
       if (reconstructedLoss < optimalReconstructedLoss) {
@@ -107,7 +107,7 @@ class ALS(dimK: Int,
   private def updateALSIteration(unfoldedM3: DenseMatrix[Double],
                                  B: DenseMatrix[Double],
                                  C: DenseMatrix[Double]): (DenseMatrix[Double], DenseVector[Double]) = {
-    val updatedA = unfoldedM3 * TensorOps.krprod(C, B) * TensorOps.to_invert(C, B)
+    val updatedA = unfoldedM3 * Tensors.krprod(C, B) * Tensors.to_invert(C, B)
     val lambda = norm(updatedA(::, *)).t.toDenseVector
     (matrixNormalization(updatedA), lambda)
   }
