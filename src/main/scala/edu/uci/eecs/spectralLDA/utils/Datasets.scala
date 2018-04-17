@@ -96,4 +96,13 @@ object Datasets {
       }
   }
 
+  def breezeToMllib(v: brSparseVector[Double]): mlVector = {
+    mlVectors.sparse(v.length, v.activeIterator.toSeq)
+  }
+
+  def mllibToBreeze(v: mlVector): brSparseVector[Double] = {
+    val vSparse = v.toSparse
+    new brSparseVector[Double](vSparse.indices, vSparse.values, v.size)
+  }
+
 }
