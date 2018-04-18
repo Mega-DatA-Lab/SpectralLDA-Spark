@@ -12,6 +12,7 @@ import breeze.stats.distributions.{Rand, RandBasis}
 import edu.uci.eecs.spectralLDA.algorithm.RandNLA
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
+import org.apache.log4j.Logger
 
 
 /** Data cumulant
@@ -35,6 +36,8 @@ case class DataCumulant(thirdOrderMoments: DenseMatrix[Double],
 
 
 object DataCumulant {
+  @transient private lazy val logger = Logger.getLogger("DataCumulant")
+
   def getDataCumulant(dimK: Int,
                       alpha0: Double,
                       documents: RDD[(Long, SparseVector[Double])],
@@ -59,7 +62,7 @@ object DataCumulant {
     val dimVocab = validDocuments.map(_._3.length).take(1)(0)
     val numDocs = validDocuments.count()
 
-    println("Start calculating first order moments...")
+    logger.info("Start calculating first order moments...")
     val (m1Index: Array[Int], m1Value: Array[Double]) = validDocuments
       .flatMap {
         case (_, length, vec) =>
@@ -74,9 +77,9 @@ object DataCumulant {
     val firstOrderMoments = new SparseVector[Double](m1Index, m1Value, dimVocab).toDenseVector
 
     // Zero out the terms with low IDF
-    println("Finished calculating first order moments.")
+    logger.info("Finished calculating first order moments.")
 
-    println("Start calculating second order moments...")
+    logger.info("Start calculating second order moments...")
     val (eigenVectors: DenseMatrix[Double], eigenValues: DenseVector[Double]) =
       if (randomisedSVD) {
         RandNLA.whiten2(
@@ -102,16 +105,16 @@ object DataCumulant {
         val i = argsort(sigma)
         (u(::, i.slice(dimVocab - dimK, dimVocab)).copy, sigma(i.slice(dimVocab - dimK, dimVocab)).copy)
       }
-    println("Finished calculating second order moments and whitening matrix.")
+    logger.info("Finished calculating second order moments and whitening matrix.")
 
-    println("Start whitening data with dimensionality reduction...")
+    logger.info("Start whitening data with dimensionality reduction...")
     val W: DenseMatrix[Double] = eigenVectors * diag(eigenValues map { x => 1 / (sqrt(x) + 1e-9) })
-    println("Finished whitening data.")
+    logger.info("Finished whitening data.")
 
     // We computing separately the first order, second order, 3rd order terms in Eq (25) (26)
     // in [Wang2015]. For the 2nd order, 3rd order terms, We'd achieve maximum performance with
     // reduceByKey() of w_i, 1\le i\le V, the rows of the whitening matrix W.
-    println("Start calculating third order moments...")
+    logger.info("Start calculating third order moments...")
     val firstOrderMoments_whitened = W.t * firstOrderMoments
     val broadcasted_W = sc.broadcast[DenseMatrix[Double]](W)
 
@@ -176,9 +179,7 @@ object DataCumulant {
     broadcasted_W.unpersist()
 
     val whitenedM3 = m3FirstOrderPart + m3SecondOrderPart + m3ThirdOrderPart + q_otimes_3
-    println("Finished calculating third order moments.")
-
-    // val unwhiteningMatrix: breeze.linalg.DenseMatrix[Double] = eigenVectors * breeze.linalg.diag(eigenValues.map(x => scala.math.sqrt(x)))
+    logger.info("Finished calculating third order moments.")
 
     new DataCumulant(
       whitenedM3 * alpha0 * (alpha0 + 1) * (alpha0 + 2) / 2.0,

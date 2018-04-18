@@ -11,6 +11,7 @@ import breeze.linalg.{*, DenseMatrix, DenseVector, all, diag, max, min, norm, sv
 import breeze.stats.distributions.{Gaussian, Rand, RandBasis}
 import scalaxy.loops._
 import scala.language.postfixOps
+import org.apache.log4j.Logger
 
 /** CANDECOMP/PARAFAC Decomposition via Alternating Least Square (ALS)
   *
@@ -35,6 +36,8 @@ class ALS(dimK: Int,
   assert(maxIterations > 0, "Max iterations must be positive.")
   assert(tol > 0.0, "tol must be positive and probably close to 0.")
   assert(restarts > 0, "Number of restarts for ALS must be positive.")
+
+  @transient private lazy val logger = Logger.getLogger("ALS")
 
   /** Run Alternating Least Squares (ALS)
     *
@@ -65,7 +68,7 @@ class ALS(dimK: Int,
       var A_prev = DenseMatrix.zeros[Double](dimK, dimK)
       var lambda: breeze.linalg.DenseVector[Double] = DenseVector.zeros[Double](dimK)
 
-      println("Start ALS iterations...")
+      logger.info("Start ALS iterations...")
       var iter: Int = 0
       while ((iter == 0) || (iter < maxIterations &&
         !isConverged(A_prev, A, dotProductThreshold = 1 - tol))) {
@@ -83,14 +86,14 @@ class ALS(dimK: Int,
         C = updatedC
         lambda = updatedLambda3
 
-        println(s"iter $iter\tlambda: max ${max(lambda)}, min ${min(lambda)}")
+        logger.info(s"iter $iter\tlambda: max ${max(lambda)}, min ${min(lambda)}")
 
         iter += 1
       }
-      println("Finished ALS iterations.")
+      logger.info("Finished ALS iterations.")
 
       reconstructedLoss = Tensors.dmatrixNorm(tensor3D - A * diag(lambda) * Tensors.krprod(C, B).t)
-      println(s"Reconstructed loss: $reconstructedLoss\tOptimal reconstructed loss: $optimalReconstructedLoss")
+      logger.info(s"Reconstructed loss: $reconstructedLoss\tOptimal reconstructed loss: $optimalReconstructedLoss")
 
       if (reconstructedLoss < optimalReconstructedLoss) {
         optimalA = A
@@ -130,7 +133,7 @@ class ALS(dimK: Int,
     }
 
     val dprod = diag(oldA.t * newA)
-    println(s"dot(oldA, newA): ${diag(oldA.t * newA)}")
+    logger.info(s"dot(oldA, newA): ${diag(oldA.t * newA)}")
 
     all(dprod >:> dotProductThreshold)
   }

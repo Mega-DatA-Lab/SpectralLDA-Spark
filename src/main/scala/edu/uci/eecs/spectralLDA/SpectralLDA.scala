@@ -21,6 +21,8 @@ import java.nio.file.{Files, Paths}
 
 
 object SpectralLDA {
+  @transient private lazy val logger = Logger.getLogger("SpectralLDA")
+
   private case class Params(
                              input: Seq[String] = Seq.empty,//use this for customized input
                              inputType: String = "rdd", // "libsvm", "parquet" or "rdd"
@@ -101,14 +103,13 @@ object SpectralLDA {
   }
 
 
-  private def run(params: Params): (RDD[(Long, SparseVector[Double])], Array[String], DenseMatrix[Double], DenseVector[Double]) = {
-
-    Logger.getRootLogger.setLevel(Level.WARN)
+  private def run(params: Params): (RDD[(Long, SparseVector[Double])],
+    Array[String], DenseMatrix[Double], DenseVector[Double]) = {
     if (params.inputType == "libsvm") {
-      println("Input data in libsvm format.")
+      logger.info("Input data in libsvm format.")
     }
     else {
-      println("Converting raw text to libsvm format.")
+      logger.info("Converting raw text to libsvm format.")
     }
 
     val applicationStart: Long = System.nanoTime()
@@ -118,7 +119,7 @@ object SpectralLDA {
       .setAppName(s"Spectral LDA via Tensor Decomposition: $params")
     val sc: SparkContext = new SparkContext(conf)
 
-    println("Start reading data...")
+    logger.info("Start reading data...")
     val (documents: RDD[(Long, SparseVector[Double])], vocabArray: Array[String]) = params.inputType match {
       case "libsvm" =>
         throw new scala.NotImplementedError("Not implemented for reading libsvm")
@@ -127,9 +128,9 @@ object SpectralLDA {
       case "rdd" =>
         (sc.objectFile[(Long, SparseVector[Double])](params.input.mkString(",")), Array[String]())
     }
-    println("Finished reading data.")
+    logger.info("Finished reading data.")
 
-    println("Start ALS algorithm for tensor decomposition...")
+    logger.info("Start fitting the LDA ...")
     val lda = new TensorLDA(
       params.k,
       params.topicConcentration,
@@ -137,7 +138,7 @@ object SpectralLDA {
       tol = params.tolerance
     )
     val (beta, alpha, _, _, _) = lda.fit(documents)
-    println("Finished ALS algorithm for tensor decomposition.")
+    logger.info("Finished fitting the LDA.")
 
     val preprocessElapsed: Double = (System.nanoTime() - preprocessStart) / 1e9
     val numDocs: Double = documents.countApprox(30000L).getFinalValue.mean
@@ -166,7 +167,6 @@ object SpectralLDA {
     breeze.linalg.csvwrite(new File(params.outputDir + s"/TD_beta_k$thisK" + ".txt"), beta, separator = ' ')
 
     //alpha
-    // println(alpha.map(x => math.abs(x/alpha0Estimate*params.topicConcentration)))
     val alpha0Estimate:Double = breeze.linalg.sum(alpha)
     val writer_alpha = new PrintWriter(new File(params.outputDir + s"/alpha_k$thisK" + ".txt" ))
     for( i <- 0 until alpha.length optimized){
