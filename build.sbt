@@ -1,3 +1,5 @@
+organization := "megadata"
+
 name := "SpectralLDA-Tensor"
 
 version := "1.2.9"
