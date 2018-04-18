@@ -1,4 +1,4 @@
-package edu.uci.eecs.spectralLDA.testharness
+package megadata.spectralLDA.testharness
 
 import org.apache.spark.{SparkConf, SparkContext}
 

@@ -1,14 +1,13 @@
-package edu.uci.eecs.spectralLDA.datamoments
+package megadata.spectralLDA.datamoments
 
 import breeze.linalg._
 import breeze.stats.distributions.{Dirichlet, Multinomial}
 import breeze.numerics.sqrt
-import edu.uci.eecs.spectralLDA.utils.Tensors
 import org.scalatest._
 import org.scalatest.Matchers._
-
 import org.apache.spark.SparkContext
-import edu.uci.eecs.spectralLDA.testharness.Context
+import megadata.spectralLDA.testharness.Context
+import megadata.spectralLDA.utils.Tensors
 
 class DataCumulantTest extends FlatSpec with Matchers {
 

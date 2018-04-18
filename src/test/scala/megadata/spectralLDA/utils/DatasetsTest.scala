@@ -1,8 +1,9 @@
-package edu.uci.eecs.spectralLDA.utils
+package megadata.spectralLDA.utils
 
-import edu.uci.eecs.spectralLDA.testharness.Context
 import org.scalatest._
 import java.nio.file.Files
+import megadata.spectralLDA.testharness.Context
+
 
 class DatasetsTest extends FlatSpec with Matchers {
 

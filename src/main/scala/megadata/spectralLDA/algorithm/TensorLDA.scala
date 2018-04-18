@@ -1,4 +1,4 @@
-package edu.uci.eecs.spectralLDA.algorithm
+package megadata.spectralLDA.algorithm
 
 /**
  * Tensor Decomposition Algorithms.
@@ -10,8 +10,10 @@ import breeze.numerics._
 import breeze.stats.distributions.{Rand, RandBasis}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.mllib.linalg.{Vector => mlVector}
-import edu.uci.eecs.spectralLDA.datamoments.DataCumulant
-import edu.uci.eecs.spectralLDA.utils.Datasets
+import megadata.spectralLDA.datamoments.DataCumulant
+import megadata.spectralLDA.utils.Datasets
+import megadata.spectralLDA.datamoments.DataCumulant
+import megadata.spectralLDA.utils.Datasets
 
 
 /** Spectral LDA model

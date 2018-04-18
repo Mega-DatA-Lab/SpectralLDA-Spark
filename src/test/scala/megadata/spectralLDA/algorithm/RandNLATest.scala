@@ -1,9 +1,9 @@
-package edu.uci.eecs.spectralLDA.algorithm
+package megadata.spectralLDA.algorithm
 
 import breeze.linalg._
 import breeze.linalg.qr.QR
 import breeze.stats.distributions.{Gaussian, RandBasis, ThreadLocalRandomGenerator, Uniform}
-import edu.uci.eecs.spectralLDA.testharness.Context
+import megadata.spectralLDA.testharness.Context
 import org.apache.commons.math3.random.MersenneTwister
 import org.apache.spark.SparkContext
 import org.scalatest._

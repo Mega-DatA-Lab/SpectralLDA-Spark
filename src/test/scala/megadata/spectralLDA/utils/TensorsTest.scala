@@ -1,4 +1,4 @@
-package edu.uci.eecs.spectralLDA.utils
+package megadata.spectralLDA.utils
 
 import breeze.linalg._
 import breeze.math.Semiring

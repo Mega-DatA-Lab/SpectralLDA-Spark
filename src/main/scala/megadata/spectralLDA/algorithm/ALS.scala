@@ -1,4 +1,4 @@
-package edu.uci.eecs.spectralLDA.algorithm
+package megadata.spectralLDA.algorithm
 
 /**
 * Tensor Decomposition Algorithms.
@@ -6,10 +6,11 @@ package edu.uci.eecs.spectralLDA.algorithm
 * Created by Furong Huang on 11/2/15.
 */
 
-import edu.uci.eecs.spectralLDA.utils.Tensors
 import breeze.linalg.{*, DenseMatrix, DenseVector, all, diag, max, min, norm, svd}
 import breeze.stats.distributions.{Gaussian, Rand, RandBasis}
+import megadata.spectralLDA.utils.Tensors
 import scalaxy.loops._
+
 import scala.language.postfixOps
 import org.apache.log4j.Logger
 

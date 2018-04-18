@@ -1,15 +1,16 @@
-package edu.uci.eecs.spectralLDA.datamoments
+package megadata.spectralLDA.datamoments
 
 /**
  * Data Cumulants Calculation.
  * Created by Furong Huang on 11/2/15.
  */
 
-import edu.uci.eecs.spectralLDA.utils.Tensors
+import megadata.spectralLDA.utils.Tensors
 import breeze.linalg._
 import breeze.numerics._
 import breeze.stats.distributions.{Rand, RandBasis}
-import edu.uci.eecs.spectralLDA.algorithm.RandNLA
+import megadata.spectralLDA.algorithm.RandNLA
+import megadata.spectralLDA.utils.Tensors
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 import org.apache.log4j.Logger

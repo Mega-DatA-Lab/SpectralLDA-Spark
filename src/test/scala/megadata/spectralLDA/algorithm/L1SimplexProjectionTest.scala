@@ -1,4 +1,4 @@
-package edu.uci.eecs.spectralLDA.algorithm
+package megadata.spectralLDA.algorithm
 
 import breeze.linalg._
 import org.scalatest._

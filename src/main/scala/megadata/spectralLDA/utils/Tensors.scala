@@ -1,4 +1,4 @@
-package edu.uci.eecs.spectralLDA.utils
+package megadata.spectralLDA.utils
 
 import breeze.linalg.{*, CSCMatrix, Counter, DenseMatrix, DenseVector, SparseVector, Tensor, norm}
 import breeze.math.{Complex, Semiring}

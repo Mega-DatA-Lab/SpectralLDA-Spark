@@ -4,20 +4,21 @@
  * Created by Furong Huang on 11/2/15.
  */
 
-package edu.uci.eecs.spectralLDA
+package megadata.spectralLDA
 
-import edu.uci.eecs.spectralLDA.algorithm.TensorLDA
 import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, sum}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
-
 import scalaxy.loops._
+
 import scala.language.postfixOps
 import scopt.OptionParser
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import java.io._
 import java.nio.file.{Files, Paths}
+
+import megadata.spectralLDA.algorithm.TensorLDA
 
 
 object SpectralLDA {

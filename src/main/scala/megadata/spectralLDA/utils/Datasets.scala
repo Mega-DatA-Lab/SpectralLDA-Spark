@@ -1,4 +1,4 @@
-package edu.uci.eecs.spectralLDA.utils
+package megadata.spectralLDA.utils
 
 import breeze.linalg.{SparseVector => brSparseVector}
 import org.apache.spark.mllib.linalg.{Vector => mlVector, Vectors => mlVectors}
