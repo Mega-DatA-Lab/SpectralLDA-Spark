@@ -5,16 +5,3 @@ target/
 
 *.swp
 
-SpectralLDA-Tensor/src/main/scala/edu/uci/eecs/spectralLDA/LDAExample.scala
-
-src/main/scala/edu/uci/eecs/spectralLDA/SpectralLDA_old.scala
-
-LDAExample-SparkSubmit
-
-run.sh
-
-Tensor-SparkSubmit
-
-src/main/scala/edu/uci/eecs/spectralLDA/SpectralLDA-janelia.scala
-
-src/main/scala/edu/uci/eecs/spectralLDA/LDAExample_arxived.scala
