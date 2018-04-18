@@ -144,14 +144,15 @@ object TensorLDA {
       case (w, wid) => (wid, w)
     }.toMap
 
-    val topics =
-      for (j <- 0 until beta.cols) yield {
-        val topTermIds = argsort(beta(::, j)).reverse.take(maxTermsPerTopic)
-        val topTermWords = topTermIds map vocabMap
-        println(s"Topic $j: ${topTermWords.mkString(", ")}")
-        (topTermWords.toArray, beta(topTermIds, j).toArray)
+    val topics = describeTopics(beta, maxTermsPerTopic)
+      .map {
+        case (ids, weights) => (ids map vocabMap, weights)
       }
-    topics.toArray
+    topics.zipWithIndex.foreach {
+      case ((terms, weights), i) =>
+        println(s"Topic #$i: ${terms.mkString(", ")}")
+    }
+    topics
   }
 
 }
