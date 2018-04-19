@@ -5,8 +5,25 @@ import org.apache.spark.mllib.linalg.{Vector => mlVector, Vectors => mlVectors}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
+/** Utility functions to read various datasets */
 object Datasets {
 
+  /** Read UCI Bag of Words Dataset
+    *
+    * The output still remains in tuples (doc-id, (word-id, count)).
+    * We have to call [[uciBowFeaturesToBreeze]] or [[uciBowFeaturesToMllib]]
+    * to produce the documents for the topic learning class. In this way
+    * the user can cache the output of this function and run the
+    * Tensor LDA, Spark LDA in the same session.
+    *
+    * @param sc               SparkContext
+    * @param docWordFilePath  docword file path
+    * @param vocabFilePath    vocab file path
+    * @param maxFeatures      Max number of features to retain
+    *                         for the bag of words
+    * @return                 RDD of (doc-id, (word-id, count)),
+    *                         Array of (vocabulary word, index)
+    */
   def readUciBagOfWords(sc: SparkContext,
                         docWordFilePath: String,
                         vocabFilePath: String,
@@ -76,6 +93,12 @@ object Datasets {
     (features, vocabFeatures.map(x => (x._1, x._3)).collect)
   }
 
+  /** Convert bag-of-word tuples to documents for TensorLDA
+    *
+    * @param features     RDD of (doc-id, (word-id, count))
+    * @param maxFeatures  Max number of features
+    * @return             RDD of (doc-id, Breeze Sparse Vector)
+    */
   def uciBowFeaturesToBreeze(features: RDD[(Long, (Int, Double))],
                              maxFeatures: Int)
   : RDD[(Long, brSparseVector[Double])] = {
@@ -86,6 +109,12 @@ object Datasets {
       }
   }
 
+  /** Convert bag-of-word tuples to documents for Spark LDA
+    *
+    * @param features     RDD of (doc-id, (word-id, count))
+    * @param maxFeatures  Max number of features
+    * @return             RDD of (doc-id, Spark Mllib Vector)
+    */
   def uciBowFeaturesToMllib(features: RDD[(Long, (Int, Double))],
                             maxFeatures: Int)
   : RDD[(Long, mlVector)] = {
@@ -96,10 +125,12 @@ object Datasets {
       }
   }
 
+  /** Convert a Breeze Sparse Vector to Spark Mllib Vector */
   def breezeToMllib(v: brSparseVector[Double]): mlVector = {
     mlVectors.sparse(v.length, v.activeIterator.toSeq)
   }
 
+  /** Convert a Spark Mllib Vector to Breeze Sparse Vector */
   def mllibToBreeze(v: mlVector): brSparseVector[Double] = {
     val vSparse = v.toSparse
     new brSparseVector[Double](vSparse.indices, vSparse.values, v.size)

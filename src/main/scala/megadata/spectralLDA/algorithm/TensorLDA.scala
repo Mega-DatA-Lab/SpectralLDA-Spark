@@ -12,8 +12,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.mllib.linalg.{Vector => mlVector}
 import megadata.spectralLDA.datamoments.DataCumulant
 import megadata.spectralLDA.utils.Datasets
-import megadata.spectralLDA.datamoments.DataCumulant
-import megadata.spectralLDA.utils.Datasets
 
 
 /** Spectral LDA model
@@ -44,6 +42,17 @@ class TensorLDA(dimK: Int,
   assert(maxIterations > 0, "The number of iterations for ALS must be positive.")
   assert(tol > 0.0, "tol must be positive and probably close to 0.")
 
+  /** Run the fitting
+    *
+    * @param documents  RDD of the documents
+    * @param randBasis  Random seed
+    * @return           matrix of fitted topic-term distribution
+    *                   (each column per topic),
+    *                   vector of fitted topic prior distribution parameter,
+    *                   eigenvectors of scaled M2 (column-wise),
+    *                   eigenvalues of scaled M2,
+    *                   vector of average term frequency
+    */
   def fit(documents: RDD[(Long, SparseVector[Double])])
          (implicit randBasis: RandBasis = Rand)
           : (DenseMatrix[Double], DenseVector[Double],
@@ -91,6 +100,7 @@ class TensorLDA(dimK: Int,
        cumulant.firstOrderMoments)
   }
 
+  /** Runs the fitting for document vectors in Spark Mllib Vector format */
   def fit2(documents: RDD[(Long, mlVector)])
           (implicit randBasis: RandBasis = Rand)
   : (DenseMatrix[Double], DenseVector[Double],
@@ -127,6 +137,13 @@ class TensorLDA(dimK: Int,
 
 object TensorLDA {
 
+  /** Describes topics with term indices
+    *
+    * @param beta              Matrix of fitted topic-term distribution
+    *                          (each column per topic)
+    * @param maxTermsPerTopic  Max terms per topic
+    * @return                  Array of (term indices, weights) tuple
+    */
   def describeTopics(beta: DenseMatrix[Double],
                      maxTermsPerTopic: Int)
   : Array[(Array[Int], Array[Double])] = {
@@ -138,6 +155,14 @@ object TensorLDA {
     topics.toArray
   }
 
+  /** Describes topics with term words
+    *
+    * @param beta              Matrix of fitted topic-term distribution
+    *                          (each column per topic)
+    * @param vocab             Array of (word, index)
+    * @param maxTermsPerTopic  Max terms per topic
+    * @return                  Array of (term words, weights) tuple
+    */
   def describeTopicsInWords(beta: DenseMatrix[Double],
                             vocab: Array[(String, Int)],
                             maxTermsPerTopic: Int)

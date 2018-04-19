@@ -7,7 +7,7 @@ import breeze.numerics.sqrt
 import breeze.stats.distributions.{Gaussian, Rand, RandBasis}
 import org.apache.spark.rdd.RDD
 
-
+/** Performs Randomised Numerical Linear Algebra */
 object RandNLA {
   /** Randomised Power Iteration Method for SVD of shifted M2
     *
