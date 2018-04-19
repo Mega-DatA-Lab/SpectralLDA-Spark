@@ -6,59 +6,39 @@ This code implements a Spectral (third order tensor decomposition) learning meth
 The Spectral learning method works with empirical counts of word pair or word triplet that appear in the same document. We collect and average them across documents. If we denote these empirical moments as tensors, we could orthogonalise and then perform the CANDECOMP/PARAFAC Decomposition on the 3rd-order moment tensor to recover the topic-word distributions of the LDA model. For more details, please refer to `report.pdf` in this repository.
 
 ## How do I get set up?
-We use the `sbt` build system. By default we support Scala 2.11.8 and Spark 2.0.0 upward. Just run
+The code is written for Java 8, Scala 2.11.12, and Spark 2.3.0+. We use the `sbt` build system. Download the latest version of `sbt` and run
 
 ```bash
-sbt package
+sbt package test
 ```
 
-It will produce `target/scala-2.11/spectrallda-tensor_2.11-1.1.jar`.
-    
-### Command Line Usage
-The command line usage is 
-    
-```bash
-Spectral LDA Factorization
-Usage: SpectralLDA [options] <input>...
+which will produce `target/scala-2.11/spectrallda-tensor_2.11-<version>.jar`. The version number is defined in `build.sbt`.
 
-  -k, --k <value>          number of topics
-  --alpha0 <value>         sum of the topic distribution prior parameter
-  --max-iter <value>       number of iterations of learning. default: 500
-  --tol <value>            tolerance for the ALS algorithm. default: 1.0E-6
-  -o, --output-dir <dir>   output write path. default: .
-  --help                   prints this usage text
-  <input>...               paths of input files   
-```
-The higher `alpha0` is relative to `k` the more likely are we to recover only topic-specific words (vs "common" words that would exist in every topic distribution). If `alpha0 = k` we would allow a non-informative prior for the topic distribution, when every `alpha_i = 1.0`.
+### Publish the Package
+In order to use the classes within this project in an interactive shell or programmatically, run ```sbt publishLocal``` to publish the package to the local repository. Either invoke the Spark shell with option `--packages megadata:spectrallda-tensor_2.11:<version>` or add the following lines in the `<dependencies>` section of the `pom.xml` in your new project.
 
-Currently `input-file` could only be a Hadoop SequenceFiles storing serialised `RDD[(Long, breeze.linalg.SparseVector[Double])]`.
-
-An example call from command line is
-
-```bash
-spark-submit \
---packages com.github.scopt:scopt_2.11:3.5.0,org.apache.hadoop:hadoop-aws:2.7.3 \
---class edu.uci.eecs.spectralLDA.SpectralLDA \
-target/scala-2.11/spectrallda-tensor_2.11-1.1.jar \
--k 5 --alpha0 5.0 -o results <RDD-file>
+```xml
+<dependency>
+      <groupId>megadata</groupId>
+      <artifactId>spectrallda-tensor_2.11</artifactId>
+      <version>x.xx.xx</version>
+</dependency>
 ```
 
-It runs with `alpha0 = k = 5` and outputs results in `result/`.
-
-### API usage
+### API Usage
 The API is designed following the lines of the Spark built-in `LDA` class.
 
 ```scala
-import edu.uci.eecs.spectralLDA.algorithm.TensorLDA
-import breeze.linalg._
+import megadata.spectralLDA.algorithm.TensorLDA
 
 val lda = new TensorLDA(
   dimK = params.k,
   alpha0 = params.topicConcentration,
-  maxIterations = value,            // optional, default: 500
-  tol = value,                      // optional, default: 1e-6
-  randomisedSVD = true,             // optional, default: true
-  numIterationsKrylovMethod = value // optional, default: 1
+  maxIterations = value,             // optional, default: 500
+  tol = value,                       // optional, default: 1e-6
+  randomisedSVD = true,              // optional, default: true
+  numIterationsKrylovMethod = value, // optional, default: 2
+  postProcessing = value             // optional, default: false
 )
 
 // Fit against the documents
@@ -78,8 +58,7 @@ val (beta: DenseMatrix[Double], alpha: DenseVector[Double],
 If one just wants to decompose a 3rd-order symmetric tensor into the sum of rank-1 tensors, we could do
 
 ```scala
-import edu.uci.eecs.spectralLDA.algorithm.ALS
-import breeze.linalg._
+import megadata.spectralLDA.algorithm.ALS
 
 val als = new ALS(
   dimK = value,
@@ -89,7 +68,7 @@ val als = new ALS(
 )
 
 // We run ALS to find the best approximating sum of rank-1 tensors such that 
-// $$ M3 = \sum_{i=1}^k\alpha_i\beta_i^{\otimes 3} $$
+// <math> M3 = \sum_{i=1}^k\alpha_i\beta_i^{\otimes 3} </math>
 
 // beta are the factor matrices
 // alpha is the eigenvalue vector

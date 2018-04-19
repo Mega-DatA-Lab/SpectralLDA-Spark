@@ -2,7 +2,7 @@ organization := "megadata"
 
 name := "SpectralLDA-Tensor"
 
-version := "1.2.11"
+version := "1.2.15"
 
 scalaVersion := "2.11.12"
 
