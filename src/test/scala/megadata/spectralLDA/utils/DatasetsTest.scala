@@ -42,4 +42,14 @@ class DatasetsTest extends FlatSpec with Matchers {
     ))
   }
 
+  "Taking subset of documents" should "be correct" in {
+    val features = sc.parallelize(
+      Array((1L, (1, 13.0)), (1L, (2, 1.0)), (1L, (3, 1.0)),
+        (2L, (2, 2.0)), (2L, (3, 1.0)), (3L, (3, 2.0)))
+    )
+
+    val subsetDocs = Datasets.filterDocumentsWithWordId(features, 2)
+    subsetDocs.keys.collect.toSet should be (Set(1L, 2L))
+  }
+
 }

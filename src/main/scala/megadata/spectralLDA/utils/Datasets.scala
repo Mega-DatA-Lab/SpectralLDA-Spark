@@ -8,6 +8,8 @@ import org.apache.spark.rdd.RDD
 /** Utility functions to read various datasets */
 object Datasets {
 
+  // --- UCI Bag of Words Dataset ----
+
   /** Read UCI Bag of Words Dataset
     *
     * The output still remains in tuples (doc-id, (word-id, count)).
@@ -134,6 +136,37 @@ object Datasets {
   def mllibToBreeze(v: mlVector): brSparseVector[Double] = {
     val vSparse = v.toSparse
     new brSparseVector[Double](vSparse.indices, vSparse.values, v.size)
+  }
+
+  /** Pick documents with specified word id */
+  def filterDocumentsWithWordId(features: RDD[(Long, (Int, Double))],
+                                wordId: Int)
+  : RDD[(Long, (Int, Double))] = {
+    features
+      .map {
+        case (docid, (wid, _)) => (docid, wid == wordId)
+      }
+      .reduceByKey(_ || _)
+      .filter(_._2)
+      .join(features)
+      .mapValues {
+        case (_, x) => x
+      }
+  }
+
+  def filterDocumentsWithWordId(features: RDD[(Long, (Int, Double))],
+                                wordIds: Array[Int])
+  : RDD[(Long, (Int, Double))] = {
+    features
+      .map {
+        case (docid, (wid, _)) => (docid, wordIds contains wid)
+      }
+      .reduceByKey(_ || _)
+      .filter(_._2)
+      .join(features)
+      .mapValues {
+        case (_, x) => x
+      }
   }
 
 }
