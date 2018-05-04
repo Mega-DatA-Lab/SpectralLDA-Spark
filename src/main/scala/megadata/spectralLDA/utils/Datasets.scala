@@ -1,37 +1,150 @@
 package megadata.spectralLDA.utils
 
+import java.nio.file.{Files, Paths, Path}
 import breeze.linalg.{SparseVector => brSparseVector}
 import org.apache.spark.mllib.linalg.{Vector => mlVector, Vectors => mlVectors}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
+
 /** Utility functions to read various datasets */
 object Datasets {
+
+  // ------------ Common -------------
+
+  /** Convert a Breeze Sparse Vector to Spark Mllib Vector */
+  def breezeToMllib(v: brSparseVector[Double]): mlVector = {
+    mlVectors.sparse(v.length, v.activeIterator.toSeq)
+  }
+
+  /** Convert a Spark Mllib Vector to Breeze Sparse Vector */
+  def mllibToBreeze(v: mlVector): brSparseVector[Double] = {
+    val vSparse = v.toSparse
+    new brSparseVector[Double](vSparse.indices, vSparse.values, v.size)
+  }
+
+  /** Write vocabulary to file */
+  def writeVocabulary(vocabulary: Array[String], uri: String): Path = {
+    import collection.JavaConverters._
+    Files.write(Paths.get(uri), vocabulary.toBuffer.asJava)
+  }
+
+  // --------- Bag of Words ----------
+
+  /** Print document statistics */
+  def printBowStatistics(features: RDD[(Long, (Int, Double))],
+                         probabilities: Array[Double],
+                         relativeError: Double,
+                         spark: SparkSession) = {
+    import spark.implicits._
+
+    val numDocs = features.keys.countApproxDistinct(relativeError)
+    println(s"# Documents: ~$numDocs")
+
+    val quantilesDistinctTokensByDocument = features
+      .mapValues(_ => 1)
+      .reduceByKey(_ + _)
+      .toDF()
+      .stat.approxQuantile("_2", probabilities, relativeError)
+    println(s"Qtl Dist Tokens By Doc: $quantilesDistinctTokensByDocument")
+
+    val quantilesDocumentLength = features
+      .mapValues(_._2)
+      .reduceByKey(_ + _)
+      .toDF()
+      .stat.approxQuantile("_2", probabilities, relativeError)
+    println(s"Qtl Doc Length: $quantilesDocumentLength")
+  }
+
+  /** Convert bag-of-word tuples to documents for TensorLDA
+    *
+    * @param features     RDD of (doc-id, (word-id, count))
+    * @param maxFeatures  Max number of features
+    * @return             RDD of (doc-id, Breeze Sparse Vector)
+    */
+  def bowFeaturesToBreeze(features: RDD[(Long, (Int, Double))],
+                          maxFeatures: Int)
+  : RDD[(Long, brSparseVector[Double])] = {
+    features
+      .groupByKey()
+      .mapValues {
+        x => brSparseVector[Double](maxFeatures)(x.toSeq: _*)
+      }
+  }
+
+  /** Convert bag-of-word tuples to documents for Spark LDA
+    *
+    * @param features     RDD of (doc-id, (word-id, count))
+    * @param maxFeatures  Max number of features
+    * @return             RDD of (doc-id, Spark Mllib Vector)
+    */
+  def bowFeaturesToMllib(features: RDD[(Long, (Int, Double))],
+                         maxFeatures: Int)
+  : RDD[(Long, mlVector)] = {
+    features
+      .groupByKey()
+      .mapValues {
+        x => mlVectors.sparse(maxFeatures, x.toSeq)
+      }
+  }
+
+  /** Pick documents with specified word id */
+  def filterDocumentsWithWordId(features: RDD[(Long, (Int, Double))],
+                                wordId: Int)
+  : RDD[(Long, (Int, Double))] = {
+    features
+      .map {
+        case (docid, (wid, _)) => (docid, wid == wordId)
+      }
+      .reduceByKey(_ || _)
+      .filter(_._2)
+      .join(features)
+      .mapValues {
+        case (_, x) => x
+      }
+  }
+
+  def filterDocumentsWithWordId(features: RDD[(Long, (Int, Double))],
+                                wordIds: Array[Int])
+  : RDD[(Long, (Int, Double))] = {
+    features
+      .map {
+        case (docid, (wid, _)) => (docid, wordIds contains wid)
+      }
+      .reduceByKey(_ || _)
+      .filter(_._2)
+      .join(features)
+      .mapValues {
+        case (_, x) => x
+      }
+  }
+
 
   // --- UCI Bag of Words Dataset ----
 
   /** Read UCI Bag of Words Dataset
     *
     * The output still remains in tuples (doc-id, (word-id, count)).
-    * We have to call [[uciBowFeaturesToBreeze]] or [[uciBowFeaturesToMllib]]
+    * We have to call [[bowFeaturesToBreeze]] or [[bowFeaturesToMllib]]
     * to produce the documents for the topic learning class. In this way
     * the user can cache the output of this function and run the
     * Tensor LDA, Spark LDA in the same session.
     *
     * @param sc               SparkContext
-    * @param docWordFilePath  docword file path
+    * @param docWordUri  docword file path
     * @param vocabFilePath    vocab file path
     * @param maxFeatures      Max number of features to retain
     *                         for the bag of words
     * @return                 RDD of (doc-id, (word-id, count)),
-    *                         Array of (vocabulary word, index)
+    *                         Array of vocabulary word
     */
   def readUciBagOfWords(sc: SparkContext,
-                        docWordFilePath: String,
+                        docWordUri: String,
                         vocabFilePath: String,
                         maxFeatures: Int)
-  : (RDD[(Long, (Int, Double))], Array[(String, Int)]) = {
-    val docWord = sc.textFile(docWordFilePath)
+  : (RDD[(Long, (Int, Double))], Array[String]) = {
+    val docWord = sc.textFile(docWordUri)
 
     // Stats of the doc-word dataset
     val docWordStats = docWord.take(3).map(_.toInt)
@@ -92,81 +205,84 @@ object Datasets {
         case (wid, ((docid, c), newid)) => (docid, (newid, c))
       }
 
-    (features, vocabFeatures.map(x => (x._1, x._3)).collect)
+    (features, vocabFeatures.collect.sortBy(_._3).map(_._1))
   }
 
-  /** Convert bag-of-word tuples to documents for TensorLDA
-    *
-    * @param features     RDD of (doc-id, (word-id, count))
-    * @param maxFeatures  Max number of features
-    * @return             RDD of (doc-id, Breeze Sparse Vector)
-    */
-  def uciBowFeaturesToBreeze(features: RDD[(Long, (Int, Double))],
-                             maxFeatures: Int)
-  : RDD[(Long, brSparseVector[Double])] = {
-    features
-      .groupByKey()
-      .mapValues {
-        x => brSparseVector[Double](maxFeatures)(x.toSeq: _*)
-      }
-  }
+  // ------- Wiki Pages Articles dump --------
 
-  /** Convert bag-of-word tuples to documents for Spark LDA
-    *
-    * @param features     RDD of (doc-id, (word-id, count))
-    * @param maxFeatures  Max number of features
-    * @return             RDD of (doc-id, Spark Mllib Vector)
-    */
-  def uciBowFeaturesToMllib(features: RDD[(Long, (Int, Double))],
-                            maxFeatures: Int)
-  : RDD[(Long, mlVector)] = {
-    features
-      .groupByKey()
-      .mapValues {
-        x => mlVectors.sparse(maxFeatures, x.toSeq)
-      }
-  }
+  /** Reads Wiki dump, outputs bag-of-words RDD and vocabulary */
+  def readWikiPagesArticlesDump(spark: SparkSession,
+                                dumpUri: String,
+                                maxFeatures: Int)
+  : (RDD[(Long, (Int, Double))], Array[String]) = {
+    // As of v2.3.0, the spark ml Vector cannot be
+    // extracted for missing Encoder class, we thus proceed by
+    //
+    // 1. Compute the vocabulary with the spark ml classes
+    // 2. Process the document texts again with the vocabulary
+    //    and map the tokens into their indices to get the RDD
+    //    bag-of-words
 
-  /** Convert a Breeze Sparse Vector to Spark Mllib Vector */
-  def breezeToMllib(v: brSparseVector[Double]): mlVector = {
-    mlVectors.sparse(v.length, v.activeIterator.toSeq)
-  }
+    import org.apache.spark.sql.Row
+    import org.apache.spark.ml.feature.{RegexTokenizer,
+      StopWordsRemover, CountVectorizer}
 
-  /** Convert a Spark Mllib Vector to Breeze Sparse Vector */
-  def mllibToBreeze(v: mlVector): brSparseVector[Double] = {
-    val vSparse = v.toSparse
-    new brSparseVector[Double](vSparse.indices, vSparse.values, v.size)
-  }
+    val df = spark.read
+      .format("com.databricks.spark.xml")
+      .option("rowTag", "revision")
+      .load(dumpUri)
+      .filter("text._VALUE is not null")
 
-  /** Pick documents with specified word id */
-  def filterDocumentsWithWordId(features: RDD[(Long, (Int, Double))],
-                                wordId: Int)
-  : RDD[(Long, (Int, Double))] = {
-    features
+    val regexTokenized = new RegexTokenizer()
+      .setInputCol("text_value")
+      .setOutputCol("words")
+      .setToLowercase(true)
+      .setPattern("\\W+")
+      .transform(df.select(df.col("text._VALUE").as( "text_value")))
+
+    val stopWordsRemoved = new StopWordsRemover()
+      .setInputCol("words")
+      .setOutputCol("stop_words_removed")
+      .transform(regexTokenized.select("words"))
+
+    val wikiVectorizerModel = new CountVectorizer()
+      .setInputCol("stop_words_removed")
+      .setOutputCol("features")
+      .setVocabSize(maxFeatures)
+      .setMinDF(1)
+      .fit(stopWordsRemoved)
+
+    val vocab = wikiVectorizerModel.vocabulary
+    val vocabToIndexMap = vocab.zipWithIndex
       .map {
-        case (docid, (wid, _)) => (docid, wid == wordId)
+        case (w, wid) => (w, wid.toInt)
       }
-      .reduceByKey(_ || _)
-      .filter(_._2)
-      .join(features)
-      .mapValues {
-        case (_, x) => x
-      }
-  }
+      .toMap
 
-  def filterDocumentsWithWordId(features: RDD[(Long, (Int, Double))],
-                                wordIds: Array[Int])
-  : RDD[(Long, (Int, Double))] = {
-    features
+    val bow = df.select("text._VALUE")
+      .rdd
       .map {
-        case (docid, (wid, _)) => (docid, wordIds contains wid)
+        case Row(documentText: String) =>
+          documentText
+            .toLowerCase()
+            .split("\\W+")
+            .collect {
+              case w if vocabToIndexMap contains w => vocabToIndexMap(w)
+            }
       }
-      .reduceByKey(_ || _)
-      .filter(_._2)
-      .join(features)
-      .mapValues {
-        case (_, x) => x
+      .zipWithIndex
+      .flatMap {
+        case (wids, docid) =>
+          wids.map {
+            case wid => ((docid, wid), 1.0)
+          }
       }
+      .reduceByKey(_ + _)
+      .map {
+        case ((docid, wid), c) => (docid, (wid, c))
+      }
+
+    (bow, vocab)
   }
 
 }

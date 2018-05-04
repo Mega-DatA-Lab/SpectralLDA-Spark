@@ -2,12 +2,13 @@ organization := "megadata"
 
 name := "SpectralLDA-Tensor"
 
-version := "1.2.17"
+version := "1.2.26"
 
 scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
     "com.nativelibs4java" %% "scalaxy-loops" % "[0.3.4,)",
+    "com.databricks" %% "spark-xml" % "[0.4.1,)",
     "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 )
 

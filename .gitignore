@@ -5,3 +5,5 @@ target/
 
 *.swp
 
+derby.log
+metastore_db/

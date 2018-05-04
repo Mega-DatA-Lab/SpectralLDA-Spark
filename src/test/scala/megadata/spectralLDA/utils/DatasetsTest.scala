@@ -28,9 +28,9 @@ class DatasetsTest extends FlatSpec with Matchers {
       .map {
         case (docid, (wid, c)) => (wid, (docid, c))
       }
-      .join(sc.parallelize(newVocab)
+      .join(sc.parallelize(newVocab).zipWithIndex()
           .map {
-            case (w, wid) => (wid, w)
+            case (w, wid: Long) => (wid.toInt, w)
           })
       .map {
         case (wid, ((docid, c), w)) => (docid, w, c)
