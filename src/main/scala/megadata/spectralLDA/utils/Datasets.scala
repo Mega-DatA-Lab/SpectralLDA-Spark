@@ -24,7 +24,12 @@ object Datasets {
     new brSparseVector[Double](vSparse.indices, vSparse.values, v.size)
   }
 
-  /** Write vocabulary to file */
+  /** Write vocabulary to file
+    *
+    * @param vocabulary     Array of vocabulary words
+    * @param uri            URI to write the vocabulary to
+    * @return               URI the vocabulary was written to
+    */
   def writeVocabulary(vocabulary: Array[String], uri: String): Path = {
     import collection.JavaConverters._
     Files.write(Paths.get(uri), vocabulary.toBuffer.asJava)
@@ -32,7 +37,13 @@ object Datasets {
 
   // --------- Bag of Words ----------
 
-  /** Print document statistics */
+  /** Print document statistics
+    *
+    * @param features       RDD[(doc-id, (word-id, count))] of Bag-of-words
+    * @param probabilities  Quantile levels for the statistics
+    * @param relativeError  Acceptable error when estimating the quantiles
+    * @param spark          SparkSession
+    */
   def printBowStatistics(features: RDD[(Long, (Int, Double))],
                          probabilities: Array[Double],
                          relativeError: Double,
@@ -89,7 +100,12 @@ object Datasets {
       }
   }
 
-  /** Pick documents with specified word id */
+  /** Pick documents with specified word id
+    *
+    * @param features   RDD[(doc-id, (word-id, count))] of bag-of-words
+    * @param wordId     Retain documents with specified word id
+    * @return           Filtered bag-of-words
+    */
   def filterDocumentsWithWordId(features: RDD[(Long, (Int, Double))],
                                 wordId: Int)
   : RDD[(Long, (Int, Double))] = {
@@ -105,6 +121,12 @@ object Datasets {
       }
   }
 
+  /** Pick documents with specified word ids
+    *
+    * @param features   RDD[(doc-id, (word-id, count))] of bag-of-words
+    * @param wordId     Retain documents with specified word ids
+    * @return           Filtered bag-of-words
+    */
   def filterDocumentsWithWordId(features: RDD[(Long, (Int, Double))],
                                 wordIds: Array[Int])
   : RDD[(Long, (Int, Double))] = {
@@ -132,7 +154,7 @@ object Datasets {
     * Tensor LDA, Spark LDA in the same session.
     *
     * @param sc               SparkContext
-    * @param docWordUri  docword file path
+    * @param docWordUri       docword file path
     * @param vocabFilePath    vocab file path
     * @param maxFeatures      Max number of features to retain
     *                         for the bag of words
@@ -210,7 +232,13 @@ object Datasets {
 
   // ------- Wiki Pages Articles dump --------
 
-  /** Reads Wiki dump, outputs bag-of-words RDD and vocabulary */
+  /** Reads Wiki dump, outputs bag-of-words RDD and vocabulary
+    *
+    * @param spark          SparkSession
+    * @param dumpUri        URI of the Wiki Pages Articles dump file
+    * @param maxFeatures    Maximum number of features
+    * @return               RDD of bag-of-words and the vocabulary
+    */
   def readWikiPagesArticlesDump(spark: SparkSession,
                                 dumpUri: String,
                                 maxFeatures: Int)
