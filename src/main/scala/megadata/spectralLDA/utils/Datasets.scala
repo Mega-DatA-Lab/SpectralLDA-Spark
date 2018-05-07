@@ -126,7 +126,7 @@ object Datasets {
   /** Pick documents with specified word ids
     *
     * @param features   RDD[(doc-id, (word-id, count))] of bag-of-words
-    * @param wordId     Retain documents with specified word ids
+    * @param wordIds    Retain documents with specified word ids
     * @return           Filtered bag-of-words
     */
   def filterDocumentsWithWordId(features: RDD[(Long, (Int, Double))],

@@ -155,28 +155,24 @@ object TensorLDA {
     topics.toArray
   }
 
-  /** Describes topics with term words
+  /** Describe and print topics with term words
     *
     * @param beta              Matrix of fitted topic-term distribution
     *                          (each column per topic)
-    * @param vocab             Array of (word, index)
+    * @param idToWordMap       Map of word-id to word
     * @param maxTermsPerTopic  Max terms per topic
     * @return                  Array of (term words, weights) tuple
     */
   def describeTopicsInWords(beta: DenseMatrix[Double],
-                            vocab: Array[(String, Int)],
+                            idToWordMap: Map[Int, String],
                             maxTermsPerTopic: Int)
   : Array[(Array[String], Array[Double])] = {
-    val vocabMap = vocab.map {
-      case (w, wid) => (wid, w)
-    }.toMap
-
     val topics = describeTopics(beta, maxTermsPerTopic)
       .map {
-        case (ids, weights) => (ids map vocabMap, weights)
+        case (ids, weights) => (ids map idToWordMap, weights)
       }
     topics.zipWithIndex.foreach {
-      case ((terms, weights), i) =>
+      case ((terms, _), i) =>
         println(s"Topic #$i: ${terms.mkString(", ")}")
     }
     topics
