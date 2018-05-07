@@ -58,14 +58,16 @@ object Datasets {
       .reduceByKey(_ + _)
       .toDF()
       .stat.approxQuantile("_2", probabilities, relativeError)
-    println(s"Qtl Dist Tokens By Doc: $quantilesDistinctTokensByDocument")
+    val msg1 = quantilesDistinctTokensByDocument.mkString(", ")
+    println(s"Qtl Dist Tokens By Doc: $msg1")
 
     val quantilesDocumentLength = features
       .mapValues(_._2)
       .reduceByKey(_ + _)
       .toDF()
       .stat.approxQuantile("_2", probabilities, relativeError)
-    println(s"Qtl Doc Length: $quantilesDocumentLength")
+    val msg2 = quantilesDocumentLength.mkString(", ")
+    println(s"Qtl Doc Length: $msg2")
   }
 
   /** Convert bag-of-word tuples to documents for TensorLDA
