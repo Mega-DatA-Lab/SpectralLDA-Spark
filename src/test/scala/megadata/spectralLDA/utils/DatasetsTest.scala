@@ -24,16 +24,16 @@ class DatasetsTest extends FlatSpec with Matchers {
     val (docs, newVocab) = Datasets.readUciBagOfWords(sc,
       docWordFilePath.toString, vocabFilePath.toString, maxFeatures = 2)
 
+    val idToWordMap = newVocab
+      .zipWithIndex
+      .map {
+        case (w, wid) => (wid, w)
+      }
+      .toMap
     val docsWithVocab = docs
       .map {
-        case (docid, (wid, c)) => (wid, (docid, c))
-      }
-      .join(sc.parallelize(newVocab).zipWithIndex()
-          .map {
-            case (w, wid: Long) => (wid.toInt, w)
-          })
-      .map {
-        case (wid, ((docid, c), w)) => (docid, w, c)
+        case (docid, (wid, c)) =>
+          (docid, idToWordMap(wid), c)
       }
 
     docsWithVocab.collect.toSet should be (Set(

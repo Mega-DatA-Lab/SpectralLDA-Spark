@@ -180,8 +180,7 @@ object Datasets {
     // Change the 1-based word indexing to 0-based
     val docWordElements = docWord
       .map(_.split(" "))
-      .filter(_.length == 3)
-      .map {
+      .collect {
         case Array(docid: String, wid: String, c: String)
         => (docid.toLong, wid.toInt - 1, c.toDouble)
       }
@@ -195,41 +194,35 @@ object Datasets {
       .reduceByKey(_ + _)
 
     // Sort DF and take the top maxFeatures words
-    val dfSorted: RDD[(Int, Int)] = df.sortBy(- _._2)
-    val wordIdsInFeatures: Array[Int] = dfSorted
-      .map(_._1).take(maxFeatures)
-
-    // Filter the doc-word dataset with the words in features
-    val docWordElementsInFeatures = docWordElements
-      .filter(wordIdsInFeatures contains _._2)
-      .cache()
-
-    // Reindex words in features
-    val vocab = sc.textFile(vocabFilePath)
-      .zipWithIndex()
+    val oldToNewWordIDMap = df
+      .sortBy(- _._2)
+      .zipWithIndex
+      .take(maxFeatures)
       .map {
-        case (w, wid) => (w, wid.toInt)
+        case ((wid, _), newWid) => (wid, newWid.toInt)
       }
-    val vocabFeatures = vocab
-      .filter(wordIdsInFeatures contains _._2)
-      .zipWithIndex()
-      .map {
-        case ((w, wid), newid) => (w, wid, newid.toInt)
-      }
+      .toMap
 
     // Reindex the words in features
-    val features = docWordElementsInFeatures
-      .map {
-        case (docid, wid, c) => (wid, (docid, c))
-      }
-      .join(vocabFeatures.map {
-        case (w, wid, newid) => (wid, newid)
-      })
-      .map {
-        case (wid, ((docid, c), newid)) => (docid, (newid, c))
+    val features = docWordElements
+      .collect {
+        case (docid, wid, c) if oldToNewWordIDMap contains wid =>
+          (docid, (oldToNewWordIDMap(wid), c))
       }
 
-    (features, vocabFeatures.collect.sortBy(_._3).map(_._1))
+    // Generate abridged vocabulary
+    // Note the words need be sorted in the order of new word-id
+    val vocab = sc.textFile(vocabFilePath)
+      .zipWithIndex()
+      .collect {
+        case (w, wid) if oldToNewWordIDMap contains wid.toInt =>
+          (w, oldToNewWordIDMap(wid.toInt))
+      }
+      .sortBy(_._2)
+      .collect
+      .map(_._1)
+
+    (features, vocab)
   }
 
   // ------- Wiki Pages Articles dump --------
