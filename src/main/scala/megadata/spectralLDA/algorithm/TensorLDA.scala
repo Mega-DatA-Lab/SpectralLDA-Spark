@@ -36,6 +36,7 @@ class TensorLDA(dimK: Int,
                 tol: Double = 1e-6,
                 randomisedSVD: Boolean = true,
                 numIterationsKrylovMethod: Int = 2,
+                slackDimK: Int = 10,
                 postProcessing: Boolean = false) extends Serializable {
   assert(dimK > 0, "The number of topics dimK must be positive.")
   assert(alpha0 > 0, "The topic concentration alpha0 must be positive.")
@@ -59,7 +60,7 @@ class TensorLDA(dimK: Int,
              DenseMatrix[Double], DenseVector[Double],
              DenseVector[Double]) = {
     val cumulant: DataCumulant = DataCumulant.getDataCumulant(
-      dimK,
+      dimK + slackDimK,
       alpha0,
       documents,
       randomisedSVD = randomisedSVD,

@@ -30,8 +30,10 @@ class ALS(dimK: Int,
           tol: Double = 1e-6,
           restarts: Int = 5)
   extends Serializable {
+  val tensorDim: Int = tensor3D.rows
+
   assert(dimK > 0, "The number of topics dimK must be positive.")
-  assert(tensor3D.rows == dimK && tensor3D.cols == dimK * dimK,
+  assert(tensor3D.cols == tensorDim * tensorDim,
     "The tensor3D must be dimK-by-(dimK * dimK) unfolded matrix")
 
   assert(maxIterations > 0, "Max iterations must be positive.")
@@ -52,9 +54,9 @@ class ALS(dimK: Int,
         DenseMatrix[Double], DenseVector[Double])={
     val gaussian = Gaussian(mu = 0.0, sigma = 1.0)
 
-    var optimalA = DenseMatrix.zeros[Double](dimK, dimK)
-    var optimalB = DenseMatrix.zeros[Double](dimK, dimK)
-    var optimalC = DenseMatrix.zeros[Double](dimK, dimK)
+    var optimalA = DenseMatrix.zeros[Double](tensorDim, dimK)
+    var optimalB = DenseMatrix.zeros[Double](tensorDim, dimK)
+    var optimalC = DenseMatrix.zeros[Double](tensorDim, dimK)
     var optimalLambda = DenseVector.zeros[Double](dimK)
 
     var reconstructedLoss: Double = 0.0
@@ -66,7 +68,7 @@ class ALS(dimK: Int,
       var B = a0.copy
       var C = a0.copy
 
-      var A_prev = DenseMatrix.zeros[Double](dimK, dimK)
+      var A_prev = DenseMatrix.zeros[Double](tensorDim, dimK)
       var lambda: breeze.linalg.DenseVector[Double] = DenseVector.zeros[Double](dimK)
 
       logger.info("Start ALS iterations...")

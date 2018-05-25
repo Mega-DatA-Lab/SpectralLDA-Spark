@@ -59,7 +59,8 @@ class TensorLDATest extends FlatSpec with Matchers {
       dimK = 3,
       alpha0 = sum(alpha),
       maxIterations = 200,
-      randomisedSVD = false
+      randomisedSVD = false,
+      slackDimK = 0
     )
 
     val (fitted_beta: DenseMatrix[Double], fitted_alpha: DenseVector[Double], _, _, _) = tensorLDA.fit(documentsRDD)
@@ -119,7 +120,8 @@ class TensorLDATest extends FlatSpec with Matchers {
       dimK = dimK,
       alpha0 = sum(alpha(0 until dimK)),
       maxIterations = 200,
-      randomisedSVD = true
+      randomisedSVD = true,
+      slackDimK = 0
     )
 
     val (fitted_beta: DenseMatrix[Double], fitted_alpha: DenseVector[Double], _, _, _) = tensorLDA.fit(documentsRDD)
