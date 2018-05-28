@@ -12,6 +12,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.mllib.linalg.{Vector => mlVector}
 import megadata.spectralLDA.datamoments.DataCumulant
 import megadata.spectralLDA.utils.Datasets
+import org.apache.log4j.Logger
 
 
 /** Spectral LDA model
@@ -36,9 +37,23 @@ class TensorLDA(dimK: Int,
                 tol: Double = 1e-6,
                 randomisedSVD: Boolean = true,
                 numIterationsKrylovMethod: Int = 2,
-                slackDimK: Int = 10,
+                slackDimK: Option[Int] = None,
                 postProcessing: Boolean = false) extends Serializable {
+  @transient private lazy val logger = Logger.getLogger("TensorLDA")
+
   assert(dimK > 0, "The number of topics dimK must be positive.")
+  assert(!slackDimK.isDefined || slackDimK.get >= 0,
+    "slackDimK must be at least 0")
+
+  // maximum randomised projection dimension
+  // Ref:
+  // Universality laws for randomized dimension reduction
+  // with applications, S. Oymak and J. A. Tropp. Inform. Inference, Nov. 2017
+  // Theorem II on Restricted Minimum Singular Value
+  val maxSlackK: Double = math.pow(dimK, 1.2) - dimK
+  val slackK = slackDimK.getOrElse(math.min(maxSlackK.toInt, 10))
+  logger.info(s"Slack of random projection dimension: $slackK")
+
   assert(alpha0 > 0, "The topic concentration alpha0 must be positive.")
   assert(maxIterations > 0, "The number of iterations for ALS must be positive.")
   assert(tol > 0.0, "tol must be positive and probably close to 0.")
@@ -60,7 +75,7 @@ class TensorLDA(dimK: Int,
              DenseMatrix[Double], DenseVector[Double],
              DenseVector[Double]) = {
     val cumulant: DataCumulant = DataCumulant.getDataCumulant(
-      dimK + slackDimK,
+      dimK + slackK,
       alpha0,
       documents,
       randomisedSVD = randomisedSVD,
