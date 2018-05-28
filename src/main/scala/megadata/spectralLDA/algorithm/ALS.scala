@@ -63,10 +63,18 @@ class ALS(dimK: Int,
     var optimalReconstructedLoss: Double = Double.PositiveInfinity
 
     val svd.SVD(a0, _, _) = svd(tensor3D)
+    // Use the SVD as initialisation for the 1st run
+    var A = a0.copy
+    var B = a0.copy
+    var C = a0.copy
+
     for (s <- 0 until restarts) {
-      var A = a0.copy
-      var B = a0.copy
-      var C = a0.copy
+      // From the 2nd run use random initialisation
+      if (s > 0) {
+        A = DenseMatrix.rand[Double](tensorDim, dimK, gaussian)
+        B = DenseMatrix.rand[Double](tensorDim, dimK, gaussian)
+        C = DenseMatrix.rand[Double](tensorDim, dimK, gaussian)
+      }
 
       var A_prev = DenseMatrix.zeros[Double](tensorDim, dimK)
       var lambda: breeze.linalg.DenseVector[Double] = DenseVector.zeros[Double](dimK)
