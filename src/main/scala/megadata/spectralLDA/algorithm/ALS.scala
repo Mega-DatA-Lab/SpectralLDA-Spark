@@ -59,6 +59,7 @@ class ALS(dimK: Int,
     var optimalC = DenseMatrix.zeros[Double](tensorDim, dimK)
     var optimalLambda = DenseVector.zeros[Double](dimK)
 
+    var converged = false
     var reconstructedLoss: Double = 0.0
     var optimalReconstructedLoss: Double = Double.PositiveInfinity
 
@@ -101,6 +102,7 @@ class ALS(dimK: Int,
 
         iter += 1
       }
+      converged |= isConverged(A_prev, A, 1 - tol)
       logger.info("Finished ALS iterations.")
 
       reconstructedLoss = Tensors.dmatrixNorm(tensor3D - A * diag(lambda) * Tensors.krprod(C, B).t)
@@ -114,6 +116,9 @@ class ALS(dimK: Int,
         optimalReconstructedLoss = reconstructedLoss
       }
     }
+
+    if (!converged)
+      logger.warn(s"ALS was unable to converge after $restarts restarts")
 
     (optimalA, optimalB, optimalC, optimalLambda)
   }
