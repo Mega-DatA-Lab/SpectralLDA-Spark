@@ -198,6 +198,9 @@ object DataCumulant {
 
     logger.info("Finished calculating third order moments.")
 
+    // rescale whitened M3 to get the sum of tensor products
+    // of topic-word vectors
+    // <math>\sum_i alpha_i beta_i\otimes beta_i\otimes beta_i</math>
     new DataCumulant(
       whitenedM3 * (alpha0 * (alpha0 + 1) * (alpha0 + 2) / 2.0),
       eigenVectors,
