@@ -32,7 +32,10 @@ import org.apache.log4j.Logger
 case class DataCumulant(thirdOrderMoments: DenseMatrix[Double],
                         eigenVectorsM2: DenseMatrix[Double],
                         eigenValuesM2: DenseVector[Double],
-                        firstOrderMoments: DenseVector[Double])
+                        firstOrderMoments: DenseVector[Double],
+                        whiteningMatrix: DenseMatrix[Double],
+                        whitenedWordTriplets: DenseMatrix[Double],
+                        whitenedWordPairs: DenseMatrix[Double])
   extends Serializable
 
 
@@ -103,167 +106,129 @@ object DataCumulant {
 
     logger.info("Start whitening data with dimensionality reduction...")
     val W: DenseMatrix[Double] = eigenVectors * diag(eigenValues map { x => 1 / (sqrt(x) + 1e-9) })
+    val broadcasted_W = sc.broadcast[DenseMatrix[Double]](W)
+
+    // whitened document vectors plus the normalisation constants
+    val whitenedDocs = validDocuments.map {
+      case (docId, len, vec) =>
+        (docId, len, vec, W.t * vec,
+          1.0 / len / (len - 1), 1.0 / len / (len - 1) / (len - 2))
+    }
+    val whitenedM1 = W.t * firstOrderMoments
     logger.info("Finished whitening data.")
 
     // We computing separately the first order, second order, 3rd order terms in Eq (25) (26)
     // in [Wang2015]. For the 2nd order, 3rd order terms, We'd achieve maximum performance with
     // reduceByKey() of w_i, 1\le i\le V, the rows of the whitening matrix W.
     logger.info("Start calculating third order moments...")
-    val firstOrderMoments_whitened = W.t * firstOrderMoments
-    val broadcasted_W = sc.broadcast[DenseMatrix[Double]](W)
 
-    // First order terms: p^{\otimes 3}, p\otimes p\otimes q, p\otimes q\otimes p,
-    // q\otimes p\otimes p
-    val m3FirstOrderPart = validDocuments
+    // Whitened word triplets
+    val whitenedWordTripletsPart1 = whitenedDocs
       .map {
-        case (_, len, vec) => whitenedM3FirstOrderTerms(
-          alpha0,
-          broadcasted_W.value,
-          firstOrderMoments_whitened,
-          vec, len
-        )
+        case (_, _, _, p, _, c3) =>
+          Tensors.makeRankOneTensor3d(p, p, p * c3)
       }
       .reduce(_ + _)
-      .map(_ / numDocs.toDouble)
 
-    // Second order terms: all terms as w_i\otimes w_i\otimes p, w_i\otimes w_i\otimes q,
-    // 1\le i\le V and their permutations
-    val m3SecondOrderPart = validDocuments
-      .flatMap {
-        case (_, len, vec) => whitenedM3SecondOrderTerms(
-          alpha0,
-          broadcasted_W.value,
-          firstOrderMoments_whitened,
-          vec, len
-        )
-      }
-      .reduceByKey(_ + _)
+    val wordTripletsPart2Mat = whitenedDocs
       .map {
-        case (i: Int, x: DenseVector[Double]) => computeSecondOrderTerms(
-          i, x,
-          broadcasted_W.value
-        )
+        case (_, _, v, p, _, c3) =>
+          v.asCscColumn * (p * c3).t
       }
       .reduce(_ + _)
-      .map(_ / numDocs.toDouble)
-
-    // Third order terms: all terms w_i^{\otimes 3}, 1\le i\le V
-    val m3ThirdOrderPart = validDocuments
-      .flatMap {
-        case (_, len, vec) => whitenedM3ThirdOrderTerms(
-          alpha0,
-          vec, len
-        )
-      }
-      .reduceByKey(_ + _)
+      .toDenseMatrix
+    val whitenedWordTripletsPart2 = wordTripletsPart2Mat(*, ::).iterator
+      .zip(W(*, ::).iterator)
       .map {
-        case (i: Int, p: Double) => computeThirdOrderTerms(
-          i, p,
-          broadcasted_W.value
-        )
+        case (v, w) =>
+          (Tensors.makeRankOneTensor3d(v, w, w)
+           + Tensors.makeRankOneTensor3d(w, v, w)
+           + Tensors.makeRankOneTensor3d(w, w, v))
       }
       .reduce(_ + _)
-      .map(_ / numDocs.toDouble)
 
-    // sketch of q=W^T M1
-    val q_otimes_3 = 2 * alpha0 * alpha0 / ((alpha0 + 1) * (alpha0 + 2)) * Tensors.makeRankOneTensor3d(
-      firstOrderMoments_whitened, firstOrderMoments_whitened, firstOrderMoments_whitened
-    )
+    val wordTripletsPart3Vec = whitenedDocs
+      .map {
+        case (_, _, v, _, _, c3) => v * c3
+      }
+      .reduce(_ + _)
+      .toDenseVector
+    val whitenedWordTripletsPart3 = wordTripletsPart3Vec.valuesIterator
+      .zip(W(*, ::).iterator)
+      .map {
+        case (v, w) =>
+          v * Tensors.makeRankOneTensor3d(w, w, w)
+      }
+      .reduce(_ + _)
+
+    val whitenedWordTriplets: DenseMatrix[Double] = (whitenedWordTripletsPart1
+      - whitenedWordTripletsPart2 + 2.0 * whitenedWordTripletsPart3)
+    whitenedWordTriplets :*= 1.0 / numDocs
+
+    // whitened word pairs
+    val whitenedWordPairsPart1 = whitenedDocs
+      .map {
+        case (_, _, _, p, c2, _) => p * p.t * c2
+      }
+      .reduce(_ + _)
+
+    val whitenedWordPairsPart2Vec = whitenedDocs
+      .map {
+        case (_, _, v, _, c2, _) => v * c2
+      }
+      .reduce(_ + _)
+    val whitenedWordPairsPart2 = W.t * diag(whitenedWordPairsPart2Vec) * W
+
+    val whitenedWordPairs: DenseMatrix[Double] = (whitenedWordPairsPart1
+      - whitenedWordPairsPart2)
+    whitenedWordPairs :*= 1.0 / numDocs
+
+    // whitened word pairs outer dot whitened M1
+    val whitenedWordPairsDotM1 = makeSymTensor(whitenedWordPairs, whitenedM1)
+
+    // whitened M1 triple dot
+    val whitenedDotM1 = Tensors.makeRankOneTensor3d(whitenedM1,
+      whitenedM1, whitenedM1)
 
     broadcasted_W.unpersist()
 
-    val whitenedM3 = m3FirstOrderPart + m3SecondOrderPart + m3ThirdOrderPart + q_otimes_3
+    val whitenedM3 = (whitenedWordTriplets
+       - whitenedWordPairsDotM1 * (alpha0 / (alpha0 + 2))
+       + whitenedDotM1 * (2 * alpha0 * alpha0 / (alpha0 + 1) / (alpha0 + 2)))
+
     logger.info("Finished calculating third order moments.")
 
     new DataCumulant(
-      whitenedM3 * alpha0 * (alpha0 + 1) * (alpha0 + 2) / 2.0,
+      whitenedM3 * (alpha0 * (alpha0 + 1) * (alpha0 + 2) / 2.0),
       eigenVectors,
       eigenValues,
-      firstOrderMoments
+      firstOrderMoments,
+      whiteningMatrix = W,
+      whitenedWordTriplets = whitenedWordTriplets,
+      whitenedWordPairs = whitenedWordPairs
     )
   }
 
-  private def whitenedM3FirstOrderTerms(alpha0: Double,
-                                        W: DenseMatrix[Double],
-                                        q: DenseVector[Double],
-                                        n: SparseVector[Double],
-                                        len: Double)
-  : DenseMatrix[Double] = {
-    // $p=W^T n$, where n is the original word count vector
-    val p: DenseVector[Double] = W.t * n
-
-    val coeff1 = 1.0 / (len * (len - 1) * (len - 2))
-    val coeff2 = 1.0 / (len * (len - 1))
-    val h1 = alpha0 / (alpha0 + 2)
-
-    val s1 = Tensors.makeRankOneTensor3d(p, p, p)
-    val s2 = Tensors.makeRankOneTensor3d(p, p, q)
-    val s3 = Tensors.makeRankOneTensor3d(p, q, p)
-    val s4 = Tensors.makeRankOneTensor3d(q, p, p)
-
-    coeff1 * s1 - coeff2 * h1 * (s2 + s3 + s4)
-  }
-
-  private def whitenedM3SecondOrderTerms(alpha0: Double,
-                                         W: DenseMatrix[Double],
-                                         q: DenseVector[Double],
-                                         n: SparseVector[Double],
-                                         len: Double)
-  : Seq[(Int, DenseVector[Double])] = {
-    val p: DenseVector[Double] = W.t * n
-
-    val coeff1 = 1.0 / (len * (len - 1) * (len - 2))
-    val coeff2 = 1.0 / (len * (len - 1))
-    val h1 = alpha0 / (alpha0 + 2)
-
-    var seqTerms = Seq[(Int, DenseVector[Double])]()
-    for ((wc_index, wc_value) <- n.activeIterator) {
-      seqTerms ++= Seq(
-        (wc_index, -coeff1 * wc_value * p),
-        (wc_index, coeff2 * h1 * wc_value * q)
-      )
+  /** Make unfolded symmetric tensor of m12 outer dot z
+    *
+    * We permute z to occupy 1st, 2nd, 3rd modes in three sub-products
+    * and sum them to return the symmetric tensor.
+    *
+    * @param m12  DenseMatrix[Double] for the 1st-2rd mode
+    * @param z    DenseVector[Double] for the 3rd mode
+    * @return     DenseMatrix[Double] for the unfolded symmetric
+    *             tensor of m12 outer dot z
+    */
+  private def makeSymTensor(m12: DenseMatrix[Double],
+                            z: DenseVector[Double]): DenseMatrix[Double] = {
+    val t1 = m12(*, ::).map {
+      x => (x * z.t).toDenseVector
     }
-
-    seqTerms
-  }
-
-  private def whitenedM3ThirdOrderTerms(alpha0: Double,
-                                        n: SparseVector[Double],
-                                        len: Double)
-  : Seq[(Int, Double)] = {
-    val coeff1 = 1.0 / (len * (len - 1) * (len - 2))
-    val coeff2 = 1.0 / (len * (len - 1))
-    val h1 = alpha0 / (alpha0 + 2)
-
-    var seqTerms = Seq[(Int, Double)]()
-    for ((wc_index, wc_value) <- n.activeIterator) {
-      seqTerms :+= (wc_index, 2 * coeff1 * wc_value)
+    val t2 = m12(*, ::).map {
+      x => (z * x.t).toDenseVector
     }
+    val t3 = z * m12.toDenseVector.t
 
-    seqTerms
-  }
-
-  private def computeSecondOrderTerms(i: Int,
-                                      x: DenseVector[Double],
-                                      W: DenseMatrix[Double])
-      : DenseMatrix[Double] = {
-    val w: DenseVector[Double] = W(i, ::).t
-
-    val prod1 = Tensors.makeRankOneTensor3d(w, w, x)
-    val prod2 = Tensors.makeRankOneTensor3d(w, x, w)
-    val prod3 = Tensors.makeRankOneTensor3d(x, w, w)
-
-    prod1 + prod2 + prod3
-  }
-
-  private def computeThirdOrderTerms(i: Int,
-                                     p: Double,
-                                     W: DenseMatrix[Double])
-      : DenseMatrix[Double] = {
-    val w: DenseVector[Double] = W(i, ::).t
-
-    val z = Tensors.makeRankOneTensor3d(w, w, w)
-
-    z * p
+    t1 + t2 + t3
   }
 }
