@@ -64,20 +64,13 @@ object DataCumulant {
     val numDocs = validDocuments.count()
 
     logger.info("Start calculating first order moments...")
-    val (m1Index: Array[Int], m1Value: Array[Double]) = validDocuments
-      .flatMap {
-        case (_, length, vec) =>
-          val termDistribution: SparseVector[Double] = vec / length.toDouble
-          termDistribution.activeIterator.toSeq
+    val firstOrderMoments = validDocuments
+      .map {
+        case (docId, len, vec) => vec * (1.0 / len)
       }
-      .reduceByKey(_ + _)
-      .mapValues(_ / numDocs.toDouble)
-      .collect
-      .sorted
-      .unzip
-    val firstOrderMoments = new SparseVector[Double](m1Index, m1Value, dimVocab).toDenseVector
-
-    // Zero out the terms with low IDF
+      .reduce(_ + _)
+      .toDenseVector
+      .*:*(1.0 / numDocs)
     logger.info("Finished calculating first order moments.")
 
     logger.info("Start calculating second order moments...")
