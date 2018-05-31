@@ -46,7 +46,17 @@ object RandNLA {
     assert(vocabSize >= dimK)
     assert(nIter >= 0)
 
-    var q = DenseMatrix.rand[Double](vocabSize, dimK,
+    // The following paper discusses about the success of random
+    // projection with relation to the dimension of the sub-space
+    // we're concerned about. i.e. To get the first dimK eigenvectors
+    // we better project into (dimK + certain slack) sub-space.
+    //
+    // Ref:
+    // Universality laws for randomized dimension reduction
+    // with applications, S. Oymak and J. A. Tropp. Inform. Inference, Nov. 2017
+    // Theorem II on Restricted Minimum Singular Value
+    val projectedDim = math.pow(dimK, 1.1).toInt
+    var q = DenseMatrix.rand[Double](vocabSize, projectedDim,
       Gaussian(mu = 0.0, sigma = 1.0))
     var m2q: DenseMatrix[Double] = null
 
@@ -54,7 +64,7 @@ object RandNLA {
       m2q = randomProjectM2(
         alpha0,
         vocabSize,
-        dimK,
+        projectedDim,
         numDocs,
         firstOrderMoments,
         documents,
@@ -67,16 +77,17 @@ object RandNLA {
     m2q = randomProjectM2(
       alpha0,
       vocabSize,
-      dimK,
+      projectedDim,
       numDocs,
       firstOrderMoments,
       documents,
       q
     )
 
-    // Randomised eigendecomposition of M2
+    // Only take the top dimK eigenvalues
     val (s: DenseVector[Double], u: DenseMatrix[Double]) = decomp2(m2q, q)
-    (u, s)
+    val idx = argtopk(s, dimK)
+    (u(::, idx).toDenseMatrix, s(idx).toDenseVector)
   }
 
   /** Musco-Musco method for randomised eigendecomposition of Hermitian matrix

@@ -45,22 +45,10 @@ class TensorLDA(dimK: Int,
   assert(!slackDimK.isDefined || slackDimK.get >= 0,
     "slackDimK must be at least 0")
 
-  // The following paper discusses about the success of random
-  // projection with relation to the dimension of the sub-space
-  // we're concerned about. i.e. To get the first dimK eigenvectors
-  // we better project into (dimK + certain slack) sub-space.
-  //
-  // We give even more slack as the SVD of rescaled M2 is just one step
-  // before the CP decomposition of rescaled M3. As one final discovered
-  // topic could be the combination of multiple eigenvectors of M2, it's
-  // better to allow sufficient redundancy in the number of eigenvectors
+  // As one final discovered topic could be the combination of multiple
+  // eigenvectors of M2, we allow redundancy in the number of eigenvectors
   // we compute for M2.
-
-  // Ref:
-  // Universality laws for randomized dimension reduction
-  // with applications, S. Oymak and J. A. Tropp. Inform. Inference, Nov. 2017
-  // Theorem II on Restricted Minimum Singular Value
-  val slackK = slackDimK.getOrElse(dimK)
+  val slackK = slackDimK.getOrElse(dimK / 2)
   logger.info(s"Slack of random projection dimension: $slackK")
 
   assert(alpha0 > 0, "The topic concentration alpha0 must be positive.")
