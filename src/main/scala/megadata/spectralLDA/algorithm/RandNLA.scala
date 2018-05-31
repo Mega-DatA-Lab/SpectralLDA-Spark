@@ -46,9 +46,8 @@ object RandNLA {
     assert(vocabSize >= dimK)
     assert(nIter >= 0)
 
-    val slackDimK = Math.min(vocabSize - dimK, dimK)
-
-    var q = DenseMatrix.rand[Double](vocabSize, dimK + slackDimK, Gaussian(mu = 0.0, sigma = 1.0))
+    var q = DenseMatrix.rand[Double](vocabSize, dimK,
+      Gaussian(mu = 0.0, sigma = 1.0))
     var m2q: DenseMatrix[Double] = null
 
     for (i <- 0 until 2 * nIter + 1) {
@@ -56,7 +55,6 @@ object RandNLA {
         alpha0,
         vocabSize,
         dimK,
-        slackDimK,
         numDocs,
         firstOrderMoments,
         documents,
@@ -70,7 +68,6 @@ object RandNLA {
       alpha0,
       vocabSize,
       dimK,
-      slackDimK,
       numDocs,
       firstOrderMoments,
       documents,
@@ -79,11 +76,7 @@ object RandNLA {
 
     // Randomised eigendecomposition of M2
     val (s: DenseVector[Double], u: DenseMatrix[Double]) = decomp2(m2q, q)
-    val idx = argtopk(s, dimK)
-    val u_M2 = u(::, idx).toDenseMatrix
-    val s_M2 = s(idx).toDenseVector
-
-    (u_M2, s_M2)
+    (u, s)
   }
 
   /** Musco-Musco method for randomised eigendecomposition of Hermitian matrix
@@ -119,7 +112,6 @@ object RandNLA {
   private[algorithm] def randomProjectM2(alpha0: Double,
                                          vocabSize: Int,
                                          dimK: Int,
-                                         slackDimK: Int,
                                          numDocs: Long,
                                          firstOrderMoments: DenseVector[Double],
                                          documents: RDD[(Long, Double, SparseVector[Double])],
@@ -129,7 +121,7 @@ object RandNLA {
 
     val qBroadcast = documents.sparkContext.broadcast[DenseMatrix[Double]](q)
 
-    val unshiftedM2 = DenseMatrix.zeros[Double](vocabSize, dimK + slackDimK)
+    val unshiftedM2 = DenseMatrix.zeros[Double](vocabSize, dimK)
     documents
       .flatMap {
         doc => accumulate_M_mul_S(
