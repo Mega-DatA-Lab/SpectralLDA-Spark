@@ -2,7 +2,7 @@ package megadata.spectralLDA.algorithm
 
 import breeze.linalg.eigSym.EigSym
 import breeze.linalg.qr.QR
-import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, argtopk, eigSym, qr}
+import breeze.linalg.{DenseMatrix, DenseVector, SparseVector, argtopk, diag, eigSym, qr}
 import breeze.numerics.sqrt
 import breeze.stats.distributions.{Gaussian, Rand, RandBasis}
 import org.apache.spark.rdd.RDD
@@ -56,32 +56,46 @@ object RandNLA {
     // with applications, S. Oymak and J. A. Tropp. Inform. Inference, Nov. 2017
     // Theorem II on Restricted Minimum Singular Value
     val projectedDim = math.pow(dimK, 1.1).toInt
+
+    // Cache some data
+    val extDocs = documents
+      .map {
+        case (docId, len, v) => (docId, len, v, 1.0 / len / (len - 1))
+      }
+    val normalisedDocs = extDocs
+      .map {
+        case (_, _, v, c2) => v * c2
+      }
+      .reduce(_ + _)
+      .toDenseVector
+
+    // Random test matrix
     var q = DenseMatrix.rand[Double](vocabSize, projectedDim,
       Gaussian(mu = 0.0, sigma = 1.0))
+
+    // Product of M2 with the test matrix
     var m2q: DenseMatrix[Double] = null
 
     for (i <- 0 until 2 * nIter + 1) {
       m2q = randomProjectM2(
+        extDocs,
+        q,
         alpha0,
-        vocabSize,
-        projectedDim,
         numDocs,
         firstOrderMoments,
-        documents,
-        q
+        normalisedDocs
       )
       val QR(nextq, _) = qr.reduced(m2q)
       q = nextq
     }
 
     m2q = randomProjectM2(
+      extDocs,
+      q,
       alpha0,
-      vocabSize,
-      projectedDim,
       numDocs,
       firstOrderMoments,
-      documents,
-      q
+      normalisedDocs
     )
 
     // Only take the top dimK eigenvalues
@@ -120,58 +134,29 @@ object RandNLA {
   }
 
   /** Given a test matrix q returns the product of shifted M2 and q */
-  private[algorithm] def randomProjectM2(alpha0: Double,
-                                         vocabSize: Int,
-                                         dimK: Int,
+  private[algorithm] def randomProjectM2(documents: RDD[(Long, Double,
+                                            SparseVector[Double], Double)],
+                                         q: DenseMatrix[Double],
+                                         alpha0: Double,
                                          numDocs: Long,
                                          firstOrderMoments: DenseVector[Double],
-                                         documents: RDD[(Long, Double, SparseVector[Double])],
-                                         q: DenseMatrix[Double]): DenseMatrix[Double] = {
+                                         normalisedDocs: DenseVector[Double]
+                                         ): DenseMatrix[Double] = {
     val para_main: Double = (alpha0 + 1.0) * alpha0
     val para_shift: Double = alpha0 * alpha0
 
-    val qBroadcast = documents.sparkContext.broadcast[DenseMatrix[Double]](q)
-
-    val unshiftedM2 = DenseMatrix.zeros[Double](vocabSize, dimK)
-    documents
-      .flatMap {
-        doc => accumulate_M_mul_S(
-          qBroadcast.value, doc._3, doc._2
-        )
+    val projectedWordPairsMatrixPart1 = documents
+      .map {
+        case (_, _, v, c2) => v.asCscColumn * ((q.t * v) * c2).t
       }
-      .reduceByKey(_ + _)
-      .collect
-      .foreach {
-        case (token, v) => unshiftedM2(token, ::) := v.t
-      }
-    unshiftedM2 /= numDocs.toDouble
+      .reduce(_ + _)
+      .toDenseMatrix
+    val projectedWordPairsMatrix = (projectedWordPairsMatrixPart1
+      - diag(normalisedDocs) * q) * (1.0 / numDocs)
 
-    qBroadcast.unpersist
+    val projectedShiftedM2 = (projectedWordPairsMatrix * para_main
+      - (firstOrderMoments * (firstOrderMoments.t * q)) * para_shift)
 
-    val m2 = unshiftedM2 * para_main - (firstOrderMoments * (firstOrderMoments.t * q)) * para_shift
-
-    m2
-  }
-
-
-  /** Return the contribution of a document to M2, multiplied by the test matrix
-    *
-    * @param S   n-by-k test matrix
-    * @param Wc  length-n word count vector
-    * @param len total word count
-    * @return    M2*S, i.e (Wc*Wc.t-diag(Wc))/(len*(len-1.0))*S
-    */
-  private[algorithm] def accumulate_M_mul_S(S: breeze.linalg.DenseMatrix[Double],
-                                            Wc: breeze.linalg.SparseVector[Double],
-                                            len: Double)
-        : Seq[(Int, DenseVector[Double])] = {
-    val len_calibrated: Double = math.max(len, 3.0)
-    val norm_length: Double = 1.0 / (len_calibrated * (len_calibrated - 1.0))
-
-    val data_mul_S: DenseVector[Double] = S.t * Wc
-
-    Wc.activeIterator.toSeq.map { case (token, count) =>
-      (token, (data_mul_S - S(token, ::).t) * count * norm_length)
-    }
+    projectedShiftedM2
   }
 }
