@@ -75,6 +75,7 @@ object RandNLA {
 
     // Product of M2 with the test matrix
     var m2q: DenseMatrix[Double] = null
+    val tmpResult = DenseMatrix.zeros[Double](vocabSize, projectedDim)
 
     for (i <- 0 until 2 * nIter + 1) {
       m2q = randomProjectM2(
@@ -83,7 +84,8 @@ object RandNLA {
         alpha0,
         numDocs,
         firstOrderMoments,
-        normalisedDocs
+        normalisedDocs,
+        tmpResult
       )
       val QR(nextq, _) = qr.reduced(m2q)
       q = nextq
@@ -95,7 +97,8 @@ object RandNLA {
       alpha0,
       numDocs,
       firstOrderMoments,
-      normalisedDocs
+      normalisedDocs,
+      tmpResult
     )
 
     // Only take the top dimK eigenvalues
@@ -140,19 +143,29 @@ object RandNLA {
                                          alpha0: Double,
                                          numDocs: Long,
                                          firstOrderMoments: DenseVector[Double],
-                                         normalisedDocs: DenseVector[Double]
+                                         normalisedDocs: DenseVector[Double],
+                                         tmpResult: DenseMatrix[Double]
                                          ): DenseMatrix[Double] = {
     val para_main: Double = (alpha0 + 1.0) * alpha0
     val para_shift: Double = alpha0 * alpha0
 
-    val projectedWordPairsMatrixPart1 = documents
-      .map {
-        case (_, _, v, c2) => v.asCscColumn * ((q.t * v) * c2).t
+    tmpResult := 0.0
+    documents
+      .flatMap {
+        case (_, _, v, c2) =>
+          val proj = (q.t * v).toDenseVector * c2
+          v.activeIterator.map {
+            case (wid, cnt) => (wid, proj * cnt)
+          }
       }
-      .reduce(_ + _)
-      .toDenseMatrix
-    val projectedWordPairsMatrix = (projectedWordPairsMatrixPart1
-      - diag(normalisedDocs) * q) * (1.0 / numDocs)
+      .reduceByKey(_ + _)
+      .collect
+      .foreach {
+        case (wid, y) => tmpResult(wid, ::) := y.t
+      }
+
+    val projectedWordPairsMatrix = (tmpResult
+       - diag(normalisedDocs) * q) * (1.0 / numDocs)
 
     val projectedShiftedM2 = (projectedWordPairsMatrix * para_main
       - (firstOrderMoments * (firstOrderMoments.t * q)) * para_shift)
