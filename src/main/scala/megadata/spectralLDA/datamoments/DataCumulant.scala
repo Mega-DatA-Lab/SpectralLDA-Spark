@@ -106,7 +106,6 @@ object DataCumulant {
 
     logger.info("Start whitening data with dimensionality reduction...")
     val W: DenseMatrix[Double] = eigenVectors * diag(eigenValues map { x => 1 / (sqrt(x) + 1e-9) })
-    val broadcasted_W = sc.broadcast[DenseMatrix[Double]](W)
 
     // whitened document vectors plus the normalisation constants
     val whitenedDocs = validDocuments.map {
@@ -205,8 +204,6 @@ object DataCumulant {
     // whitened M1 triple dot
     val whitenedDotM1 = Tensors.makeRankOneTensor3d(whitenedM1,
       whitenedM1, whitenedM1)
-
-    broadcasted_W.unpersist()
 
     val whitenedM3 = (whitenedWordTriplets
        - whitenedWordPairsDotM1 * (alpha0 / (alpha0 + 2))
