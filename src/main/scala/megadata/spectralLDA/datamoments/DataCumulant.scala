@@ -130,13 +130,29 @@ object DataCumulant {
       }
       .reduce(_ + _)
 
-    val wordTripletsPart2Mat = whitenedDocs
-      .map {
+    // As of Spark 2.3.0, an efficient way to do
+//    val wordTripletsPart2Mat = whitenedDocs
+//      .map {
+//        case (_, _, v, p, _, c3) =>
+//          v.asCscColumn * (p * c3).t
+//      }
+//      .reduce(_ + _)
+//      .toDenseMatrix
+    val wordTripletsPart2Mat = DenseMatrix.zeros[Double](dimVocab, dimK)
+    whitenedDocs
+      .flatMap {
         case (_, _, v, p, _, c3) =>
-          v.asCscColumn * (p * c3).t
+          val z = p * c3
+          v.activeIterator.map {
+            case (wid, cnt) => (wid, z * cnt)
+          }
       }
-      .reduce(_ + _)
-      .toDenseMatrix
+      .reduceByKey(_ + _)
+      .collect
+      .foreach {
+        case (wid, y) => wordTripletsPart2Mat(wid, ::) := y.t
+      }
+
     val whitenedWordTripletsPart2 = wordTripletsPart2Mat(*, ::).iterator
       .zip(W(*, ::).iterator)
       .map {

@@ -149,6 +149,14 @@ object RandNLA {
     val para_main: Double = (alpha0 + 1.0) * alpha0
     val para_shift: Double = alpha0 * alpha0
 
+    // As of Spark 2.3.0, an efficient way to do
+    // documents
+    //   .map {
+    //     case (_, _, v, c2) =>
+    //       v.asCscColumn * (q.t * v).t * c2
+    //   }
+    //   .reduce(_ + _)
+    //   .toDenseMatrix
     tmpResult := 0.0
     documents
       .flatMap {
