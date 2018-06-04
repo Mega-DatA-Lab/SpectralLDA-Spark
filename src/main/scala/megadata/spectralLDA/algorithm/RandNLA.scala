@@ -40,7 +40,7 @@ object RandNLA {
               numDocs: Long,
               firstOrderMoments: DenseVector[Double],
               documents: RDD[(Long, Double, SparseVector[Double])],
-              nIter: Int = 1)
+              nIter: Int)
             (implicit randBasis: RandBasis = Rand)
   : (DenseMatrix[Double], DenseVector[Double]) = {
     assert(vocabSize >= dimK)
@@ -55,7 +55,7 @@ object RandNLA {
     // Universality laws for randomized dimension reduction
     // with applications, S. Oymak and J. A. Tropp. Inform. Inference, Nov. 2017
     // Theorem II on Restricted Minimum Singular Value
-    val projectedDim = math.pow(dimK, 1.1).toInt
+    val projectedDim = math.pow(dimK, 1.15).toInt
 
     // Cache some data
     val extDocs = documents

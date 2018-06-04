@@ -46,7 +46,7 @@ object DataCumulant {
                       alpha0: Double,
                       documents: RDD[(Long, SparseVector[Double])],
                       randomisedSVD: Boolean = true,
-                      numIterationsKrylovMethod: Int = 1)
+                      numIterationsKrylovMethod: Int)
                      (implicit randBasis: RandBasis = Rand)
         : DataCumulant = {
     assert(dimK > 0, "The number of topics dimK must be positive.")

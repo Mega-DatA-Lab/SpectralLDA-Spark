@@ -27,6 +27,9 @@ import org.apache.log4j.Logger
   *                                   true by default
   * @param numIterationsKrylovMethod  iterations of the Krylov Method for
   *                                   randomised SVD, 2 by default
+  * @param slackDimK                  extra number of orthogonal topic
+  *                                   fragments to discover in order to
+  *                                   compose k topics
   * @param postProcessing             post-processing topic-word distribution
   *                                   matrix by projection into l1-simplex,
   *                                   false by default
@@ -36,7 +39,7 @@ class TensorLDA(dimK: Int,
                 maxIterations: Int = 500,
                 tol: Double = 1e-6,
                 randomisedSVD: Boolean = true,
-                numIterationsKrylovMethod: Int = 2,
+                numIterationsKrylovMethod: Int = 1,
                 slackDimK: Option[Int] = None,
                 postProcessing: Boolean = false) extends Serializable {
   @transient private lazy val logger = Logger.getLogger("TensorLDA")
@@ -48,7 +51,7 @@ class TensorLDA(dimK: Int,
   // As one final discovered topic could be the combination of multiple
   // eigenvectors of M2, we allow redundancy in the number of eigenvectors
   // we compute for M2.
-  val slackK = slackDimK.getOrElse(dimK / 2)
+  val slackK = slackDimK.getOrElse(dimK)
   logger.info(s"Slack of random projection dimension: $slackK")
 
   assert(alpha0 > 0, "The topic concentration alpha0 must be positive.")

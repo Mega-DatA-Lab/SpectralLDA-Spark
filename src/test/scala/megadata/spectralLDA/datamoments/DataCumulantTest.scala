@@ -57,7 +57,8 @@ class DataCumulantTest extends FlatSpec with Matchers {
       dimK = 3,
       alpha0 = sum(alpha),
       documentsRDD,
-      randomisedSVD = false
+      randomisedSVD = false,
+      numIterationsKrylovMethod = 0
     )
 
     val expectedM3: DenseMatrix[Double] = expected_whitened_M3(
