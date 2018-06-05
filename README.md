@@ -55,7 +55,7 @@ val (beta: DenseMatrix[Double], alpha: DenseVector[Double],
 ```
 
 ### Example Results
-We give the example results on the [UCI Bag of Words NYTimes Dataset](https://archive.ics.uci.edu/ml/datasets/bag+of+words). Suppose we placed the docword and vocabulary files under `/home/ubuntu/data`. Within the `sbt` console,
+We give the example results on the [UCI Bag of Words NYTimes Dataset](https://archive.ics.uci.edu/ml/datasets/bag+of+words). Suppose we placed the docword and vocabulary files under `/home/ubuntu/data`. For efficient parallel reading of data in Spark decompress all files. Within the `sbt` console,
 
 ```scala
 import megadata.spectralLDA.utils.Datasets
